@@ -96,7 +96,7 @@ Every workshop repo is one site made of several workshops, each of which can be 
 |Path |What it is
 
 |`content/`
-|The home part, the same in every repo: *Workshop home* (`index.adoc`: what the site is and where to start), *Workshop instructor* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop attendee* (`attendee.adoc`: how the workshops work and where to begin), with *Shared CLI tools* (`cli-tools.adoc` and its snippet `partials/cli-tools-container.adoc`: how to run the release's tools image on the cluster).
+|The home part, the same in every repo: *Workshop home* (`index.adoc`: what the site is and where to start), *Workshop instructor* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop attendee* (`attendee.adoc`: how the workshops work and where to begin), with *Downloads* (`downloads.adoc`: every file of the release) and *Shared CLI tools* (`cli-tools.adoc` and its snippet `partials/cli-tools-container.adoc`: how to run the release's tools image on the cluster).
 
 |`workshops/<name>/`
 |One workshop: its own `antora.yml`, and its pages, navigation, images and examples under `modules/<name>/`, including its `setup-requirements.adoc`. Its pages are at `/<name>/` on the site.
@@ -391,7 +391,13 @@ It calls `.github/workflows/release.yml` here, which publishes:
 
 |SBOMs of both images
 |`<workshop>-<tag>.sbom.cdx.json`, `<workshop>-tools-<tag>.sbom.cdx.json`
+
+|The guide for disconnected clusters, the tools image guide, the tools pod on its own, and the images to mirror
+|`DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml`, `images-mirror.txt`
 |===
+
+Every site has a *Downloads* page (`downloads.adoc`, under Workshop instructor) that lists these files.
+The released site serves all of them but the offline bundle and the SBOMs under `/release-files/`, so a site deployed from the image has everything it needs; the Pages site links to the latest release's assets instead.
 
 The first time a workshop releases, make both images public under the owner's *Packages*, so clusters can pull them without credentials.
 Pages builds also serve the chart at `/helm/`.
