@@ -1,0 +1,244 @@
+name: Release a workshop
+# Reusable: publishes a workshop release with everything needed to run it disconnected:
+#   - the PDF of the whole site
+#   - the runtime image (the built site served on port 8080) and the tools image
+#     (oc, helm and the workshop's own tools/install.sh), both on ghcr.io with SBOMs
+#   - the Helm chart, also served from the site at /helm/
+#   - an offline bundle: the site, chart, PDF, DISCONNECTED.md, TOOLS.md and the image list
+# The caller grants `contents: write` and `packages: write`.
+on:
+  workflow_call:
+    inputs:
+      tag-name:
+        description: Release to create, such as v1.0.0
+        type: string
+        required: true
+      title:
+        description: Workshop title for the release name, such as OpenShift 101 Workshop
+        type: string
+        required: true
+      site-playbook:
+        description: Antora playbook that builds the site
+        type: string
+        default: default-site.yml
+      pdf-playbook:
+        description: Antora playbook that builds the PDF
+        type: string
+        default: default-pdf.yml
+      common-ref:
+        description: Branch, tag or commit of workshop-common to take the shared files from
+        type: string
+        default: main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      TAG: ${{ inputs.tag-name }}
+      WORKSHOP_TITLE: ${{ inputs.title }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tags and history for the footer build stamp
+      - name: checkout workshop-common
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/workshop-common
+          ref: ${{ inputs.common-ref }}
+          path: .workshop-common
+      - name: put workshop-common next to the workshop
+        # antora-assembler.yml loads ../workshop-common/pdf/workshop-pdf.rb, as in a local checkout
+        run: ln -s "$GITHUB_WORKSPACE/.workshop-common" "$GITHUB_WORKSPACE/../workshop-common"
+      - name: names and versions
+        id: names
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::The release must look like v1.2.3 (or v1.2.3-rc.1), not $TAG"
+            exit 1
+          fi
+          name=${GITHUB_REPOSITORY#*/}
+          image="ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          {
+            echo "WORKSHOP_NAME=$name"
+            echo "WORKSHOP_IMAGE=$image"
+            echo "RELEASE_TAG=$TAG"
+            echo "CHART_VERSION=${TAG#v}"
+          } >> "$GITHUB_ENV"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # PDF (Antora 3.2 with Assembler)
+      - name: setup node for the pdf
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22  # @antora/pdf-extension 1.x requires Node.js >= 20.20
+      - name: setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true  # asciidoctor-pdf and rouge from the workshop's Gemfile
+      - name: build the pdf
+        env:
+          PLAYBOOK: ${{ inputs.pdf-playbook }}
+          IMAGE: ${{ steps.names.outputs.image }}
+        run: |
+          npx --yes \
+            --package @antora/cli@3.2 \
+            --package @antora/site-generator@3.2 \
+            --package @antora/pdf-extension@1.0.1 \
+            --package @asciidoctor/tabs@1.0.0-beta.6 \
+            antora generate "$PLAYBOOK" --stacktrace \
+            --to-dir "$RUNNER_TEMP/pdf" \
+            --attribute revnumber="$TAG" \
+            --attribute tools-image-basename="$IMAGE-tools" \
+            --attribute tools-image-tag="$TAG"
+          mapfile -t pdfs < <(find "$RUNNER_TEMP/pdf" -name '*.pdf' -type f)
+          if [ "${#pdfs[@]}" -ne 1 ]; then
+            echo "::error::Expected one PDF, found ${#pdfs[@]}: ${pdfs[*]}"
+            exit 1
+          fi
+          cp "${pdfs[0]}" "$WORKSHOP_NAME-$TAG.pdf"
+
+      # Site (Antora 3.1, as on GitHub Pages), served at the root of the runtime image
+      - name: setup node for the site
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.13.1
+      - name: setup helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      - name: build the site
+        env:
+          PLAYBOOK: ${{ inputs.site-playbook }}
+          IMAGE: ${{ steps.names.outputs.image }}
+        run: |
+          keys=()
+          key() { keys+=(--key "$1=\"$2\""); }
+          key build-repo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          key build-commit "$(git rev-parse HEAD)"
+          key build-short "$(git rev-parse --short=7 HEAD)"
+          key build-date "$(date -u '+%Y-%m-%d %H:%M UTC')"
+          key build-release "$TAG"
+          key build-version "$TAG"
+          npx --yes \
+            --package @antora/cli@3.1 \
+            --package @antora/site-generator@3.1 \
+            --package @asciidoctor/tabs@1.0.0-beta.6 \
+            antora generate "$PLAYBOOK" --stacktrace \
+            --url http://localhost:8080 \
+            --to-dir "$RUNNER_TEMP/site" \
+            --attribute tools-image-basename="$IMAGE-tools" \
+            --attribute tools-image-tag="$TAG" \
+            "${keys[@]}"
+      - name: package the chart and the offline files
+        run: |
+          .workshop-common/scripts/package-offline.sh \
+            --out "$RUNNER_TEMP/offline" \
+            --chart-index "$RUNNER_TEMP/site/helm" \
+            --docs
+          cp "$WORKSHOP_NAME-$TAG.pdf" "$RUNNER_TEMP/site/"
+
+      # Images
+      - name: setup buildx
+        uses: docker/setup-buildx-action@v3
+      - name: log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build and push the runtime image
+        id: runtime
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ runner.temp }}/site
+          file: .workshop-common/offline/Dockerfile.runtime
+          push: true
+          tags: |
+            ${{ steps.names.outputs.image }}:${{ inputs.tag-name }}
+            ${{ steps.names.outputs.image }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=${{ inputs.title }}
+      - name: build and push the tools image
+        id: tools
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .workshop-common/offline/Dockerfile.tools
+          push: true
+          build-args: |
+            WORKSHOP_TITLE=${{ inputs.title }}
+          tags: |
+            ${{ steps.names.outputs.image }}-tools:${{ inputs.tag-name }}
+            ${{ steps.names.outputs.image }}-tools:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=${{ inputs.title }} tools
+      - name: check the tools image
+        env:
+          IMAGE: ${{ steps.names.outputs.image }}
+        run: .workshop-common/scripts/verify-tools-image.sh "$IMAGE-tools:$TAG"
+      - name: sboms
+        env:
+          IMAGE: ${{ steps.names.outputs.image }}
+          RUNTIME_DIGEST: ${{ steps.runtime.outputs.digest }}
+          TOOLS_DIGEST: ${{ steps.tools.outputs.digest }}
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/v1.19.0/install.sh \
+            | sh -s -- -b /usr/local/bin v1.19.0
+          syft scan "$IMAGE@$RUNTIME_DIGEST" \
+            -o "cyclonedx-json=$WORKSHOP_NAME-$TAG.sbom.cdx.json"
+          syft scan "$IMAGE-tools@$TOOLS_DIGEST" \
+            -o "cyclonedx-json=$WORKSHOP_NAME-tools-$TAG.sbom.cdx.json"
+
+      # Offline bundle and release
+      - name: offline bundle
+        env:
+          IMAGE: ${{ steps.names.outputs.image }}
+          VERSION: ${{ steps.names.outputs.version }}
+        run: |
+          staging="$RUNNER_TEMP/bundle"
+          mkdir -p "$staging"
+          cp -a "$RUNNER_TEMP/site" "$staging/www"
+          cp "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$VERSION.tgz" \
+            "$RUNNER_TEMP/offline/DISCONNECTED.md" \
+            "$RUNNER_TEMP/offline/TOOLS.md" \
+            "$RUNNER_TEMP/offline/tools-deployment.yaml" \
+            "$WORKSHOP_NAME-$TAG.pdf" \
+            "$staging/"
+          cp "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$VERSION.tgz" .
+          {
+            echo "# The workshop site and its command-line tools"
+            echo "$IMAGE:$TAG"
+            echo "$IMAGE-tools:$TAG"
+            echo "# Images the exercises pull are on each workshop's Setup Requirements page."
+          } > "$staging/images-mirror.txt"
+          tar -C "$staging" -czf "$WORKSHOP_NAME-offline-$TAG.tar.gz" .
+          ls -la ./*.pdf ./*.tgz ./*.tar.gz ./*.sbom.cdx.json
+      - name: publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag-name }}
+          name: ${{ inputs.title }} ${{ inputs.tag-name }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          body: |
+            Everything needed to run ${{ inputs.title }}, including in a disconnected cluster:
+            the PDF, the offline bundle (see DISCONNECTED.md inside), the Helm chart, and SBOMs for
+            `${{ steps.names.outputs.image }}:${{ inputs.tag-name }}` and
+            `${{ steps.names.outputs.image }}-tools:${{ inputs.tag-name }}`.
+          files: |
+            ${{ steps.names.outputs.name }}-${{ inputs.tag-name }}.pdf
+            ${{ steps.names.outputs.name }}-offline-${{ inputs.tag-name }}.tar.gz
+            ${{ steps.names.outputs.name }}-${{ steps.names.outputs.version }}.tgz
+            ${{ steps.names.outputs.name }}-${{ inputs.tag-name }}.sbom.cdx.json
+            ${{ steps.names.outputs.name }}-tools-${{ inputs.tag-name }}.sbom.cdx.json

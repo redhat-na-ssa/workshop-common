@@ -1,6 +1,6 @@
 # Gitleaks configuration for this workshop: every built-in rule.
 # When a page needs a placeholder password or demo token on purpose, allowlist
-# that exact value here (see openshift-cloud-workshop's .gitleaks.toml for an example),
+# that exact value here (see openshift-103-workshop's .gitleaks.toml for an example),
 # so any other secret still fails the scan.
 #
 # Run locally:

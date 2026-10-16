@@ -24,6 +24,14 @@ on:
         description: Command run from the repo root after the site is built
         type: string
         default: ""
+      helm-chart:
+        description: Serve the workshop's Helm chart from the site at /helm/ (scripts/package-offline.sh)
+        type: boolean
+        default: true
+      common-ref:
+        description: Branch, tag or commit of workshop-common to take the chart from
+        type: string
+        default: main
 
 jobs:
   build:
@@ -83,10 +91,25 @@ jobs:
             --url "$SITE_URL" \
             "${keys[@]}"
       - name: setup helm
-        if: inputs.helm-version != ''
+        if: inputs.helm-version != '' || inputs.helm-chart
         uses: azure/setup-helm@v4
         with:
-          version: ${{ inputs.helm-version }}
+          version: ${{ inputs.helm-version || 'v3.16.3' }}
+      - name: checkout workshop-common
+        if: inputs.helm-chart
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/workshop-common
+          ref: ${{ inputs.common-ref }}
+          path: .workshop-common
+      - name: helm chart repository
+        if: inputs.helm-chart
+        env:
+          OUTPUT_DIR: ${{ inputs.output-dir }}
+        run: |
+          .workshop-common/scripts/package-offline.sh \
+            --out "$RUNNER_TEMP/chart" \
+            --chart-index "$OUTPUT_DIR/helm"
       - name: post-build
         if: inputs.post-build != ''
         env:

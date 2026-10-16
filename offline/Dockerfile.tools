@@ -1,0 +1,63 @@
+# syntax=docker/dockerfile:1.6
+# The command-line tools a workshop needs, in one image, for disconnected clusters.
+# Build context: the workshop repo, with workshop-common checked out in .workshop-common
+# and the rendered chart in .offline-chart (the release workflow does both).
+# Every workshop gets oc, kubectl, helm, jq, yq, git, curl, wget, skopeo and a docker shim;
+# a workshop adds its own tools with tools/install.sh (run as root, TARGETARCH set) and
+# lists their command names in tools/extra-tools, one per line, for the banner and the check.
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+ARG TARGETARCH=amd64
+ARG HELM_VERSION=3.16.3
+ARG YQ_VERSION=4.44.3
+ARG WORKSHOP_TITLE="Workshop"
+
+USER 0
+
+RUN dnf install -y \
+    ca-certificates tar gzip unzip which procps-ng bind-utils jq git gnupg2 \
+    findutils shadow-utils skopeo wget bash \
+    && dnf clean all
+
+RUN set -eux; \
+    case "${TARGETARCH}" in \
+      amd64) suffix= ;; \
+      arm64) suffix=-arm64 ;; \
+      *) echo "unsupported TARGETARCH=${TARGETARCH}"; exit 1 ;; \
+    esac; \
+    curl -sSL "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux${suffix}.tar.gz" \
+      | tar -xz -C /usr/local/bin oc kubectl; \
+    curl -sSL "https://get.helm.sh/helm-v${HELM_VERSION}-linux-${TARGETARCH}.tar.gz" \
+      | tar -xz -C /tmp; \
+    install -m0755 "/tmp/linux-${TARGETARCH}/helm" /usr/local/bin/helm; \
+    rm -rf "/tmp/linux-${TARGETARCH}"; \
+    curl -sSL -o /usr/local/bin/yq \
+      "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_${TARGETARCH}"; \
+    chmod 0755 /usr/local/bin/oc /usr/local/bin/kubectl /usr/local/bin/yq
+
+# the workshop's own tools
+RUN --mount=type=bind,source=.,target=/ctx \
+    set -eux; \
+    mkdir -p /usr/local/share/workshop; \
+    if [ -f /ctx/tools/install.sh ]; then TARGETARCH="${TARGETARCH}" bash /ctx/tools/install.sh; fi; \
+    if [ -f /ctx/tools/extra-tools ]; then cp /ctx/tools/extra-tools /usr/local/share/workshop/extra-tools; fi
+
+COPY .workshop-common/offline/docker-shim /usr/local/bin/docker
+COPY .workshop-common/offline/tools-banner.sh /usr/local/share/workshop/tools-banner.sh
+COPY .offline-chart/ /usr/local/share/workshop/chart/
+
+RUN chmod 0755 /usr/local/bin/docker \
+    && chmod 0644 /usr/local/share/workshop/tools-banner.sh \
+    && helm lint /usr/local/share/workshop/chart \
+    && useradd -u 1001 -r -g 0 -d /workshop -m -s /bin/bash workshop \
+    && ln -sfn /usr/local/share/workshop/chart /workshop/chart \
+    && printf '\n. /usr/local/share/workshop/tools-banner.sh\n' >>/workshop/.bashrc \
+    && chown -R 1001:0 /workshop /usr/local/share/workshop \
+    && chmod -R g=u /workshop
+
+ENV HOME=/workshop \
+    WORKSHOP_TITLE=${WORKSHOP_TITLE}
+WORKDIR /workshop
+USER 1001
+
+CMD ["bash", "-lc", "exec sleep infinity"]

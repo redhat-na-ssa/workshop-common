@@ -4,7 +4,9 @@ The site look and build workflows shared by the OpenShift workshops:
 
 * `openshift-101-workshop` (OpenShift 101)
 * `openshift-102-workshop` (OpenShift 102)
-* `openshift-cloud-workshop` (OpenShift on AWS and Azure)
+* `openshift-103-workshop` (OpenShift 103: ROSA and ARO)
+
+All of them share one layout (see <<layout>>) and release the same way (see <<releases>>).
 
 The workshops and this repo live under the same GitHub owner; `<owner>` below stands for it.
 Moving them to another owner means changing `<owner>` in each workshop's playbooks and workflows.
@@ -30,8 +32,14 @@ Change something here once and every workshop picks it up on its next site build
 |`.github/workflows/pages.yml`
 |Reusable workflow that builds a workshop site with Antora, stamps the footer with the release, commit and build time, and deploys it to the workshop's GitHub Pages.
 
-|`.github/workflows/pdf-release.yml`
-|Reusable workflow that builds a workshop PDF and publishes it as a release.
+|`.github/workflows/release.yml`
+|Reusable workflow that publishes a workshop release with everything needed to run it disconnected. See <<releases>>.
+
+|`offline/`
+|What a release builds from: the runtime image (`Dockerfile.runtime`), the tools image (`Dockerfile.tools`, with the `docker` shim and shell banner), the Helm chart (`chart/`), and the `DISCONNECTED.md`, `TOOLS.md` and `tools-deployment.yaml` that ship in the offline bundle.
+
+|`scripts/package-offline.sh`, `scripts/verify-tools-image.sh`
+|Render and package a workshop's chart and offline files, and check its tools image. Both also run locally.
 
 |`.github/workflows/pdf-test.yml`
 |Reusable workflow that builds a workshop PDF on a pull request, without publishing it.
@@ -40,13 +48,19 @@ Change something here once and every workshop picks it up on its next site build
 |Reusable workflow that checks a pull request: the formatting conventions on the lines it changes, a site build with no Antora warnings, and every link inside the built site. See <<checks>>.
 
 |`scripts/preview.sh`
-|Builds a workshop site the way the Pages workflow does and serves it locally, optionally rebuilding on every change and with this checkout's `ui/`. See <<previewing-a-workshop>>.
+|Builds a workshop site the way the Pages workflow does and serves it locally, optionally rebuilding on every change, with this checkout's `ui/`, or for one workshop alone. See <<previewing-a-workshop>>.
 
 |`scripts/check-content.py`, `scripts/check-links.py`
 |The checks it runs. Both also run locally.
 
 |`template/`, `scripts/new-workshop.sh`
-|The starting point for a new workshop, and the script that copies it into a new repo. See <<adding-a-workshop>>.
+|The starting point for a new workshop repo, and the script that copies it into a new repo. See <<adding-a-workshop>>.
+
+|`template-workshop/`, `scripts/add-workshop.py`
+|The starting point for one more workshop inside a repo, and the script that adds it. See <<layout>>.
+
+|`scripts/standalone-playbook.py`
+|Writes a playbook that builds one workshop of a repo on its own, for `preview.sh --workshop` and the pull request checks.
 
 |`workshops.txt`
 |The workshops that use this repo. Their sites are rebuilt after every merge here.
@@ -70,7 +84,44 @@ The workshop's values come from the Pages workflow; the shared one is written in
 A bundle built from uncommitted changes says so.
 To give the shared setup a release number, create a `v*` release here, then run *Publish UI bundle* and the workshop Pages workflows.
 
-Each workshop keeps its content, its Antora playbooks, its `Gemfile` and anything only it needs, such as OpenShift 102's offline bundle release and the cloud workshop's sample app image.
+Each workshop keeps its content, its Antora playbooks, its `Gemfile`, its own tools (`tools/install.sh`) and anything only it needs, such as OpenShift 103's sample app image.
+
+[#layout]
+== Workshop layout
+
+Every workshop repo is one site made of several workshops, each of which can be built and tested on its own:
+
+[cols="1,2"]
+|===
+|Path |What it is
+
+|`content/`
+|The home part, the same in every repo: *Workshop home* (`index.adoc`: what the site is and where to start), *Workshop instructor* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop attendee* (`attendee.adoc`: how the workshops work and where to begin).
+
+|`workshops/<name>/`
+|One workshop: its own `antora.yml`, and its pages, navigation, images and examples under `modules/<name>/`, including its `setup-requirements.adoc`. Its pages are at `/<name>/` on the site.
+
+|`tools/install.sh`, `tools/extra-tools`
+|The command-line tools the workshops need beyond the shared ones, added to the release's tools image.
+|===
+
+All the parts are one Antora component (`name: ROOT`, no version), so one navigation spans every workshop.
+The playbooks list `content/` last, which makes its `antora.yml` the one the site uses: its title, its navigation list (the home part's, then each workshop's) and its AsciiDoc attributes, which must include every attribute any workshop needs.
+A workshop's own `antora.yml` applies only when it is built alone.
+
+To add a workshop to a repo, from the repo's folder:
+
+[source,bash]
+----
+../workshop-common/scripts/add-workshop.py running-applications "Running Applications"
+----
+
+It copies `template-workshop/` to `workshops/running-applications/` and lists the workshop everywhere the site needs it: both playbooks, `content/antora.yml`, the home part's navigation and its three pages.
+Each of those has a line that says `add-workshop.py adds workshops above this line`; keep those lines.
+Then write its pages and fill in its row on the instructor page and its setup requirements.
+
+Link between pages of one workshop with `xref:page.adoc[]`, to another workshop with `xref:<name>:page.adoc[]`, and to a home page with `xref:ROOT:instructor.adoc[]`.
+Every workshop must also build on its own, so keep links out of a workshop into the others, or guard them with an attribute only `content/antora.yml` sets.
 
 == How the workshops use it
 
@@ -137,6 +188,13 @@ With this repo checked out next to the workshop, run this from the workshop's fo
 
 It builds the site with the same Antora version and extensions as the Pages workflow, serves it on http://localhost:8080/ and rebuilds it when you save a change.
 `--local-ui` uses this checkout's `ui/` instead of the published bundle, `--no-serve` only builds, and a playbook name builds that playbook instead of `default-site.yml`.
+`--workshop <name>` builds only `workshops/<name>`, the way it will look on its own, to test it before it joins the site:
+
+[source,bash]
+----
+../workshop-common/scripts/preview.sh --watch --workshop running-applications
+----
+
 It needs Node.js and Python 3.
 
 [#pdf-look]
@@ -173,7 +231,7 @@ To change the look of every PDF, edit `pdf/workshop-theme.yml` (the https://docs
 [#adding-a-workshop]
 == Adding a workshop
 
-A new workshop starts from `template/`, which has the playbooks, the workflows, an introduction, a setup requirements page and a sample module page that shows the formatting conventions.
+A new workshop repo starts from `template/`, which has the playbooks, the workflows and the home part, and one workshop from `template-workshop/`, with a setup requirements page and a sample module page that shows the formatting conventions.
 The steps use the GitHub CLI, signed in to an account that can create repos under the owner of this repo.
 
 . From this repo's checkout, create the workshop next to it.
@@ -181,8 +239,10 @@ The folder name becomes the repo name, and the owner is this repo's owner:
 +
 [source,bash]
 ----
-scripts/new-workshop.sh ../openshift-201-workshop "OpenShift 201"
+scripts/new-workshop.sh ../openshift-201-workshop "OpenShift 201 Workshop"
 ----
++
+The first workshop inside it is `workshops/first-steps`; name it yourself with two more arguments, such as `operators "Operators"`.
 
 . Create the repo on GitHub and push `main`:
 +
@@ -228,20 +288,21 @@ gh api repos/<owner>/openshift-201-workshop/pages \
 If the `WORKSHOP_DISPATCH_TOKEN` secret is set, also add the repo to that token's repository access in your GitHub token settings, or its site won't rebuild after a merge here.
 
 . Write the workshop.
-Replace the sample pages under `content/modules/ROOT/pages`, list them in `nav.adoc`, and fill in `setup-requirements.adoc`: every workshop lists the cluster components, Operators, command-line tools, roles and access it needs.
+Fill in the home part's three pages under `content/modules/ROOT/pages`, replace the sample pages under `workshops/first-steps/modules/first-steps/pages`, list them in that workshop's `nav.adoc`, and fill in its `setup-requirements.adoc`: every workshop lists the cluster components, Operators, command-line tools, roles and access it needs.
+Add more workshops with `add-workshop.py` (see <<layout>>), and the tools they need to `tools/install.sh`.
 Work in pull requests, so *Check content* and *Test PDF Build* run on each one.
 
-. Publish the first release and its PDF:
+. Publish the first release (see <<releases>>), then make its two images public under the owner's *Packages*:
 +
 [source,bash]
 ----
-gh workflow run build-and-release-pdf.yml \
+gh workflow run release.yml \
   --repo <owner>/openshift-201-workshop \
   --field tag_name=v1.0.0
 ----
 
 To change what every new workshop starts with, edit `template/`.
-Its placeholders are `@@TITLE@@`, `@@REPO@@` and `@@OWNER@@`, and *Test the workshop template* builds it on every pull request.
+Its placeholders are `@@TITLE@@`, `@@REPO@@` and `@@OWNER@@` (and `@@NAME@@` and `@@WTITLE@@` in `template-workshop/`), and *Test the workshop template* builds it, its PDF and its images on every pull request.
 Changing the template doesn't change workshops that already exist.
 
 [#checks]
@@ -257,6 +318,7 @@ Put it in its own code block.
 Commands in tables and plain mentions, such as "`oc login` signs you in", are fine.
 * Antora warns while building the site, for example about an xref to a page that doesn't exist.
 * A link or image inside the built site points to a page, file or section that doesn't exist.
+* A workshop under `workshops/` doesn't build on its own without warnings.
 
 Only the lines a pull request changes are held to the conventions, so older pages don't have to be cleaned up first.
 To allow an exception, put a comment line right above the code block or the sentence:
@@ -293,9 +355,77 @@ antora generate default-site.yml \
 
 Without `--base`, `check-content.py` checks every line, which lists the older problems too.
 
+[#releases]
+== Releases
+
+Every workshop releases the same way, so it can run in a disconnected cluster from what the release holds.
+Run the workshop's *Release* workflow with the next version, or push a tag of that name:
+
+[source,bash]
+----
+gh workflow run release.yml \
+  --repo <owner>/<workshop> \
+  --field tag_name=v1.1.0
+----
+
+It calls `.github/workflows/release.yml` here, which publishes:
+
+[cols="1,2"]
+|===
+|What |Name
+
+|The PDF of the whole site
+|`<workshop>-<tag>.pdf`
+
+|The site, built to serve at the root of a container, on port 8080
+|`ghcr.io/<owner>/<workshop>:<tag>` (and `latest`)
+
+|The tools image: the shared tools (`oc`, `kubectl`, `helm`, `jq`, `yq`, `git`, `curl`, `wget`, `skopeo`, a `docker` shim), the workshop's `tools/install.sh` and the Helm chart in `~/chart`
+|`ghcr.io/<owner>/<workshop>-tools:<tag>` (and `latest`)
+
+|The Helm chart, which runs the site and a tools pod; also served from the site at `/helm/`
+|`<workshop>-<version>.tgz`
+
+|The offline bundle: the site, the chart, the PDF, `DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml` and the list of images to mirror
+|`<workshop>-offline-<tag>.tar.gz`
+
+|SBOMs of both images
+|`<workshop>-<tag>.sbom.cdx.json`, `<workshop>-tools-<tag>.sbom.cdx.json`
+|===
+
+The first time a workshop releases, make both images public under the owner's *Packages*, so clusters can pull them without credentials.
+Pages builds also serve the chart at `/helm/`.
+
+To check a workshop's tools image locally, with Docker or Podman, from the workshop's folder:
+
+[source,bash]
+----
+../workshop-common/scripts/package-offline.sh --out /tmp/offline
+----
+
+[source,bash]
+----
+cp -R ../workshop-common .workshop-common
+----
+
+[source,bash]
+----
+docker build \
+  --file .workshop-common/offline/Dockerfile.tools \
+  --tag tools:test \
+  .
+----
+
+[source,bash]
+----
+../workshop-common/scripts/verify-tools-image.sh tools:test
+----
+
+Delete `.workshop-common` afterwards; the release workflow checks this repo out there itself.
+
 == Reusable workflow inputs
 
-`pages.yml`:: `playbook` (default `default-site.yml`), `output-dir` (`www`), `extra-npm-packages` (installed next to Antora 3.1 and `@asciidoctor/tabs`), `helm-version` (installs Helm when set), `post-build` (a command run after the site is built). The caller grants `contents: read`, `pages: write` and `id-token: write`.
-`pdf-release.yml`:: `tag-name`, `pdf-name` and `pdf-title` (required), `playbook` (`default-pdf.yml`), `output-dir` (`www`), `common-ref` (the branch, tag or commit of this repo to take `pdf/` from, `main`). The caller grants `contents: write`.
+`pages.yml`:: `playbook` (default `default-site.yml`), `output-dir` (`www`), `extra-npm-packages` (installed next to Antora 3.1 and `@asciidoctor/tabs`), `helm-chart` (serve the workshop's chart at `/helm/`, `true`), `helm-version` (the Helm version to install), `post-build` (a command run after the site is built), `common-ref` (`main`). The caller grants `contents: read`, `pages: write` and `id-token: write`.
+`release.yml`:: `tag-name` and `title` (required), `site-playbook` (`default-site.yml`), `pdf-playbook` (`default-pdf.yml`), `common-ref` (the branch, tag or commit of this repo to take `offline/`, `pdf/` and the scripts from, `main`). The caller grants `contents: write` and `packages: write`.
 `content-check.yml`:: `playbook` (`default-site.yml`), `extra-npm-packages`, `common-ref` (the branch, tag or commit of this repo to take the check scripts from, `main`). The caller grants `contents: read`.
 `pdf-test.yml`:: `playbook` (`default-pdf.yml`), `output-dir` (`www`), `common-ref` (`main`), `single-pdf` (fail unless exactly one PDF is built). The caller grants `contents: read`.

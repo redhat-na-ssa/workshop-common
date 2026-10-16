@@ -1,7 +1,8 @@
 name: Test the workshop template
 # Starts a workshop from template/ with scripts/new-workshop.sh, then builds its site
-# (no Antora warnings, no broken links, conventions met) and its PDF with this branch's
-# UI bundle, so the template keeps working as the shared setup changes.
+# (no Antora warnings, no broken links, conventions met, each workshop alone too), its PDF
+# with this branch's UI bundle, and its release images and chart, so the template keeps
+# working as the shared setup changes.
 on:
   pull_request:
   push:
@@ -53,6 +54,19 @@ jobs:
             --log-failure-level warn
       - name: links
         run: python3 scripts/check-links.py "$RUNNER_TEMP/site"
+      - name: each workshop on its own
+        working-directory: ${{ env.DEMO }}
+        run: |
+          for dir in workshops/*/; do
+            name=$(basename "$dir")
+            python3 "$GITHUB_WORKSPACE/scripts/standalone-playbook.py" \
+              default-site.yml "$name" > ".standalone-$name.yml"
+            antora generate ".standalone-$name.yml" --stacktrace \
+              --ui-bundle-url "$RUNNER_TEMP/ui-bundle.zip" \
+              --to-dir "$RUNNER_TEMP/alone/$name" \
+              --log-failure-level warn
+            python3 "$GITHUB_WORKSPACE/scripts/check-links.py" "$RUNNER_TEMP/alone/$name"
+          done
 
   pdf:
     runs-on: ubuntu-latest
@@ -91,3 +105,59 @@ jobs:
           antora generate default-pdf.yml --stacktrace \
             --ui-bundle-url "$RUNNER_TEMP/ui-bundle.zip"
           find www -name '*.pdf' | grep .
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: start a workshop from the template
+        run: |
+          git config --global user.name "workshop-common CI"
+          git config --global user.email "ci@users.noreply.github.com"
+          scripts/new-workshop.sh "$DEMO" "Template Test Workshop"
+          cp -R "$GITHUB_WORKSPACE" "$DEMO/.workshop-common"
+      - name: setup helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      - name: package the chart and the offline files
+        working-directory: ${{ env.DEMO }}
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository_owner }}/demo-workshop
+          RELEASE_TAG: v0.0.1
+        run: |
+          .workshop-common/scripts/package-offline.sh \
+            --out "$RUNNER_TEMP/offline" \
+            --chart-index "$RUNNER_TEMP/site/helm" \
+            --docs
+          ls -la "$RUNNER_TEMP/offline" "$RUNNER_TEMP/site/helm"
+      - name: setup buildx
+        uses: docker/setup-buildx-action@v3
+      - name: build the tools image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DEMO }}
+          file: ${{ env.DEMO }}/.workshop-common/offline/Dockerfile.tools
+          load: true
+          build-args: |
+            WORKSHOP_TITLE=Template Test Workshop
+          tags: demo-workshop-tools:test
+      - name: check the tools image
+        working-directory: ${{ env.DEMO }}
+        run: .workshop-common/scripts/verify-tools-image.sh demo-workshop-tools:test
+      - name: build the runtime image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ runner.temp }}/site
+          file: offline/Dockerfile.runtime
+          load: true
+          tags: demo-workshop:test
+      - name: serve the runtime image
+        run: |
+          docker run --detach --rm --name site --publish 8080:8080 demo-workshop:test
+          sleep 3
+          curl --fail --silent --show-error http://localhost:8080/helm/index.yaml
+          docker stop site

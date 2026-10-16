@@ -1,0 +1,42 @@
+{{- if .Values.tools.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "workshop.toolsFullname" . }}
+  labels:
+    helm.sh/chart: {{ include "workshop.chart" . }}
+    app.kubernetes.io/name: {{ include "workshop.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: workshop-tools
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.tools.replicaCount }}
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "workshop.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: workshop-tools
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "workshop.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: workshop-tools
+      {{- with .Values.tools.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: tools
+          image: {{ include "workshop.toolsImage" . }}
+          imagePullPolicy: {{ .Values.tools.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.tools.resources | nindent 12 }}
+{{- end }}
