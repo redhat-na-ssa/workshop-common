@@ -2,4 +2,4 @@
 # Publish UI bundle rebuilds each one's site after every merge here.
 openshift-101-workshop
 openshift-102-workshop
-ocp-cloud-workshop
+openshift-cloud-workshop
