@@ -43,13 +43,14 @@ video {
 .doc table.tableblock:has(.listingblock) {
     table-layout: fixed;
 }
-/* build stamp under the footer: release, commit and build time (partials/build-info.hbs) */
+/* the footer holds only the build stamp: release, commit, shared setup and build time
+   (partials/footer-content.hbs replaces the theme's "Powered by Red Hat Demo Platform" link,
+   because demo.redhat.com is for Red Hat employees only) */
 .build-info {
-    background-color: #e1e1e1;
     color: #5d5d5d;
     font-size: 0.75rem;
     text-align: center;
-    padding: 0 1rem 0.75rem;
+    padding: 0.25rem 1rem;
 }
 .build-info span {
     white-space: nowrap;
