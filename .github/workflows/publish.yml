@@ -1,11 +1,14 @@
 name: Publish UI bundle
-# Builds ui-bundle.zip on every change to main and replaces the asset on the `ui-bundle`
-# release, which every workshop playbook downloads. Pull requests only build it.
+# Builds ui-bundle.zip on every change to main and on every v* release, and replaces the
+# asset on the `ui-bundle` release, which every workshop playbook downloads. Pull requests
+# only build it.
 on:
   push:
     branches: [main]
     paths-ignore:
       - "README.adoc"
+  release:
+    types: [published]  # stamps the new version into the bundle
   pull_request:
   workflow_dispatch:
 
@@ -18,6 +21,7 @@ concurrency:
 
 jobs:
   bundle:
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     permissions:
       contents: write  # create the ui-bundle release and replace its asset

@@ -69,7 +69,7 @@ Change something here once and every workshop picks it up on its next site build
 |Starts a workshop from the template on every pull request and builds its site and PDF, so the template keeps working.
 
 |`.github/workflows/publish.yml`
-|This repo's own workflow: on every change to `main` it rebuilds `ui-bundle.zip` and replaces it on the `ui-bundle` release.
+|This repo's own workflow: on every change to `main` and every `v*` release it rebuilds `ui-bundle.zip` and replaces it on the `ui-bundle` release.
 |===
 
 == Versions in the footer
@@ -82,7 +82,8 @@ Release v1.0.0 + 2 commits · Commit 69f6dbc · Shared setup v1.0.0 + 1 commit �
 
 The workshop's values come from the Pages workflow; the shared one is written into the bundle by `scripts/build-ui-bundle.sh` from this repo's latest `v*` tag and commit, and links to that commit.
 A bundle built from uncommitted changes says so.
-To give the shared setup a release number, create a `v*` release here, then run *Publish UI bundle* and the workshop Pages workflows.
+To give the shared setup a release number, create a `v*` release here.
+*Publish UI bundle* runs on its own when the release is published, and so do the workshop Pages workflows if this repo has the `WORKSHOP_DISPATCH_TOKEN` secret (see <<rebuilding-the-sites-automatically>>); otherwise run them by hand.
 
 Each workshop keeps its content, its Antora playbooks, its `Gemfile`, its own tools (`tools/install.sh`) and anything only it needs, such as OpenShift 103's sample app image.
 
@@ -171,10 +172,11 @@ for r in $(sed -e "s/#.*//" workshops.txt); do
 done
 ----
 
+[#rebuilding-the-sites-automatically]
 === Rebuilding the sites automatically
 
 Add a repository secret named `WORKSHOP_DISPATCH_TOKEN` holding a fine-grained token with *Actions: Read and write* on the workshop repos.
-*Publish UI bundle* then runs each workshop's Pages workflow after every merge.
+*Publish UI bundle* then runs each workshop's Pages workflow after every merge and every `v*` release.
 It rebuilds the repos in `workshops.txt`; a repository variable `WORKSHOP_REPOS`, holding names separated by spaces, replaces that list.
 
 [#previewing-a-workshop]
@@ -369,6 +371,8 @@ gh workflow run release.yml \
   --repo <owner>/<workshop> \
   --field tag_name=v1.1.0
 ----
+
+When it finishes, the workshop's Pages workflow runs on its own, so the site's footer and Downloads page show the new release.
 
 It calls `.github/workflows/release.yml` here, which publishes:
 
