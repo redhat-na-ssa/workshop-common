@@ -1,0 +1,96 @@
+name: Build and Release PDF
+# Reusable: builds a workshop's PDF with Antora Assembler and publishes it as a GitHub release.
+# The caller grants `contents: write`; its Gemfile supplies asciidoctor-pdf and rouge.
+on:
+  workflow_call:
+    inputs:
+      tag-name:
+        description: Release tag to create or update, such as v1.0.0
+        type: string
+        required: true
+      pdf-name:
+        description: File name stem for the release asset (<pdf-name>-<tag>.pdf)
+        type: string
+        required: true
+      pdf-title:
+        description: Workshop title used in the release name and notes
+        type: string
+        required: true
+      playbook:
+        description: Antora playbook that builds the PDF
+        type: string
+        default: default-pdf.yml
+      output-dir:
+        description: Directory the playbook writes to
+        type: string
+        default: www
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the release and upload the PDF
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22  # @antora/pdf-extension 1.x requires Node.js >= 20.20
+      - name: setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true  # installs asciidoctor-pdf and rouge from the Gemfile
+      - name: install antora
+        run: |
+          npm install --global \
+            @antora/cli@3.2 \
+            @antora/site-generator@3.2 \
+            @antora/pdf-extension@1.0.1 \
+            @asciidoctor/tabs@1.0.0-beta.6
+      - name: build pdf
+        env:
+          PLAYBOOK: ${{ inputs.playbook }}
+        run: antora generate "$PLAYBOOK" --stacktrace
+      - name: find pdf
+        id: find_pdf
+        env:
+          OUTPUT_DIR: ${{ inputs.output-dir }}
+          PDF_NAME: ${{ inputs.pdf-name }}
+          TAG_NAME: ${{ inputs.tag-name }}
+        run: |
+          pdf_file=$(find "$OUTPUT_DIR" -name "*.pdf" -type f | head -1)
+          if [ -z "$pdf_file" ]; then
+            echo "No PDF file found under $OUTPUT_DIR"
+            exit 1
+          fi
+          echo "Found PDF: $pdf_file"
+          pdf_path="${PDF_NAME}-${TAG_NAME}.pdf"
+          cp "$pdf_file" "$pdf_path"
+          echo "pdf_path=$pdf_path" >> "$GITHUB_OUTPUT"
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag-name }}
+          name: ${{ inputs.pdf-title }} ${{ inputs.tag-name }}
+          target_commitish: ${{ github.sha }}
+          draft: false
+          prerelease: false
+          files: ${{ steps.find_pdf.outputs.pdf_path }}
+          body: |
+            ## ${{ inputs.pdf-title }}
+
+            This release contains the PDF version of the ${{ inputs.pdf-title }}.
+
+            ### Changes
+            - Generated from commit: ${{ github.sha }}
+            - Build: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Download the PDF documentation below.
+      - name: upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-documentation
+          path: ${{ steps.find_pdf.outputs.pdf_path }}
+          retention-days: 30

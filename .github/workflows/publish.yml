@@ -1,0 +1,75 @@
+name: Publish UI bundle
+# Builds ui-bundle.zip on every change to main and replaces the asset on the `ui-bundle`
+# release, which every workshop playbook downloads. Pull requests only build it.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.adoc"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-ui-bundle
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the ui-bundle release and replace its asset
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tags and history for the version stamped into the bundle
+      - name: build ui bundle
+        run: scripts/build-ui-bundle.sh build/ui-bundle.zip
+      - name: upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-bundle
+          path: build/ui-bundle.zip
+          retention-days: 7
+      - name: publish to the ui-bundle release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Workshop UI bundle built from ${GITHUB_SHA::7} ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA).
+          Playbooks download it from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/ui-bundle/ui-bundle.zip"
+          if gh release view ui-bundle >/dev/null 2>&1; then
+            gh release upload ui-bundle build/ui-bundle.zip --clobber
+            gh release edit ui-bundle --notes "$notes"
+          else
+            gh release create ui-bundle build/ui-bundle.zip \
+              --title "Workshop UI bundle" \
+              --notes "$notes" \
+              --target "$GITHUB_SHA" \
+              --latest=false
+          fi
+
+  # Rebuild the workshop sites so they pick up the new bundle and workflows right away.
+  # Needs a WORKSHOP_DISPATCH_TOKEN secret (a token with Actions write access to the
+  # workshop repos); without it this job is skipped and each site updates on its next push.
+  rebuild-sites:
+    needs: bundle
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.WORKSHOP_DISPATCH_TOKEN }}
+      WORKSHOP_REPOS: ${{ vars.WORKSHOP_REPOS || 'openshift-101-workshop openshift-102-workshop ocp-cloud-workshop' }}
+    steps:
+      - name: run each workshop's Pages workflow
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "No WORKSHOP_DISPATCH_TOKEN secret; the sites update on their next push."
+            exit 0
+          fi
+          for r in $WORKSHOP_REPOS; do
+            gh workflow run gh-pages.yml \
+              --repo "$GITHUB_REPOSITORY_OWNER/$r"
+          done

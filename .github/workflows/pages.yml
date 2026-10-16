@@ -1,0 +1,115 @@
+name: Publish to GitHub Pages
+# Reusable: builds a workshop's Antora site and deploys it to the caller's GitHub Pages.
+# The caller grants `contents: read`, `pages: write` and `id-token: write`.
+on:
+  workflow_call:
+    inputs:
+      playbook:
+        description: Antora playbook to build
+        type: string
+        default: default-site.yml
+      output-dir:
+        description: Directory the playbook writes the site to
+        type: string
+        default: www
+      extra-npm-packages:
+        description: npm packages to install next to Antora, space-separated
+        type: string
+        default: ""
+      helm-version:
+        description: Install this Helm version before post-build (empty skips Helm)
+        type: string
+        default: ""
+      post-build:
+        description: Command run from the repo root after the site is built
+        type: string
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tags and history for the footer build stamp
+      - name: configure pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.13.1
+      - name: install antora
+        env:
+          EXTRA_NPM_PACKAGES: ${{ inputs.extra-npm-packages }}
+        run: |
+          # shellcheck disable=SC2086 # the extra packages are a space-separated list
+          npm install --global \
+            @antora/cli@3.1 \
+            @antora/site-generator@3.1 \
+            @asciidoctor/tabs@1.0.0-beta.6 \
+            $EXTRA_NPM_PACKAGES
+      - name: antora generate
+        env:
+          PLAYBOOK: ${{ inputs.playbook }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          # stamp the footer with the release, commit and build time (ui/partials/build-info.hbs);
+          # Antora camel-cases key names, so build-commit reaches the UI as site.keys.buildCommit.
+          # Values are YAML-parsed, so each is double-quoted to keep a short SHA such as
+          # 67713e7 from being read as a number.
+          keys=()
+          key() { keys+=(--key "$1=\"$2\""); }
+          key build-repo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          key build-commit "$(git rev-parse HEAD)"
+          key build-short "$(git rev-parse --short=7 HEAD)"
+          key build-date "$(date -u '+%Y-%m-%d %H:%M UTC')"
+          release=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -n "$release" ]; then
+            ahead=$(git rev-list --count "$release..HEAD")
+            version=$release
+            if [ "$ahead" -eq 1 ]; then version="$release + 1 commit"; fi
+            if [ "$ahead" -gt 1 ]; then version="$release + $ahead commits"; fi
+            key build-release "$release"
+            key build-version "$version"
+          fi
+          # build for wherever Pages serves this repo (an org subpath such as
+          # https://<owner>.github.io/<repo>, or a custom domain), so links,
+          # the 404 page and the sitemap match the published URL.
+          antora generate "$PLAYBOOK" --stacktrace \
+            --url "$SITE_URL" \
+            "${keys[@]}"
+      - name: setup helm
+        if: inputs.helm-version != ''
+        uses: azure/setup-helm@v4
+        with:
+          version: ${{ inputs.helm-version }}
+      - name: post-build
+        if: inputs.post-build != ''
+        env:
+          GH_REF_TYPE: ${{ github.ref_type }}
+          GH_REF_NAME: ${{ github.ref_name }}
+          GH_RUN_NUMBER: ${{ github.run_number }}
+          POST_BUILD: ${{ inputs.post-build }}
+        run: bash -euo pipefail -c "$POST_BUILD"
+      - name: upload pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ inputs.output-dir }}
+          include-hidden-files: true
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: deploy github pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,69 @@
+name: Test PDF Build
+# Reusable: builds a workshop's PDF without publishing anything, and keeps it as a run artifact.
+# The caller grants `contents: read`; its Gemfile supplies asciidoctor-pdf and rouge.
+on:
+  workflow_call:
+    inputs:
+      playbook:
+        description: Antora playbook that builds the PDF
+        type: string
+        default: default-pdf.yml
+      output-dir:
+        description: Directory the playbook writes to
+        type: string
+        default: www
+      single-pdf:
+        description: Fail unless the build produces exactly one PDF
+        type: boolean
+        default: false
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22  # @antora/pdf-extension 1.x requires Node.js >= 20.20
+      - name: setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true  # installs asciidoctor-pdf and rouge from the Gemfile
+      - name: install antora
+        run: |
+          npm install --global \
+            @antora/cli@3.2 \
+            @antora/site-generator@3.2 \
+            @antora/pdf-extension@1.0.1 \
+            @asciidoctor/tabs@1.0.0-beta.6
+      - name: build pdf
+        env:
+          PLAYBOOK: ${{ inputs.playbook }}
+        run: antora generate "$PLAYBOOK" --stacktrace
+      - name: verify pdf
+        env:
+          OUTPUT_DIR: ${{ inputs.output-dir }}
+          SINGLE_PDF: ${{ inputs.single-pdf }}
+        run: |
+          mapfile -d '' -t pdf_files < <(find "$OUTPUT_DIR" -name "*.pdf" -type f -print0)
+          if [ "${#pdf_files[@]}" -eq 0 ]; then
+            echo "No PDF file found under $OUTPUT_DIR"
+            exit 1
+          fi
+          if [ "$SINGLE_PDF" = "true" ] && [ "${#pdf_files[@]}" -ne 1 ]; then
+            echo "Expected one PDF, found ${#pdf_files[@]}:"
+            printf '%s\n' "${pdf_files[@]}"
+            exit 1
+          fi
+          ls -la "${pdf_files[@]}"
+      - name: upload pdf artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-pdf-build
+          path: ${{ inputs.output-dir }}/**/*.pdf
+          retention-days: 7
