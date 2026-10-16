@@ -1,0 +1,5 @@
+# The workshops that use workshop-common, one repo name per line (same owner as this repo).
+# Publish UI bundle rebuilds each one's site after every merge here.
+openshift-101-workshop
+openshift-102-workshop
+ocp-cloud-workshop

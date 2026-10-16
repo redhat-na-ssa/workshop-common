@@ -1,0 +1,93 @@
+name: Test the workshop template
+# Starts a workshop from template/ with scripts/new-workshop.sh, then builds its site
+# (no Antora warnings, no broken links, conventions met) and its PDF with this branch's
+# UI bundle, so the template keeps working as the shared setup changes.
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.adoc"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DEMO: ${{ github.workspace }}/../demo-workshop
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tags for the version stamped into the bundle
+      - name: start a workshop from the template
+        run: |
+          git config --global user.name "workshop-common CI"
+          git config --global user.email "ci@users.noreply.github.com"
+          scripts/new-workshop.sh "$DEMO" "Template Test Workshop"
+      - name: build ui bundle
+        run: scripts/build-ui-bundle.sh "$RUNNER_TEMP/ui-bundle.zip"
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.13.1
+      - name: install antora
+        run: |
+          npm install --global \
+            @antora/cli@3.1 \
+            @antora/site-generator@3.1 \
+            @asciidoctor/tabs@1.0.0-beta.6
+      - name: conventions
+        working-directory: ${{ env.DEMO }}
+        run: python3 "$GITHUB_WORKSPACE/scripts/check-content.py"
+      - name: build the site, failing on warnings
+        working-directory: ${{ env.DEMO }}
+        run: |
+          antora generate default-site.yml --stacktrace \
+            --ui-bundle-url "$RUNNER_TEMP/ui-bundle.zip" \
+            --to-dir "$RUNNER_TEMP/site" \
+            --log-failure-level warn
+      - name: links
+        run: python3 scripts/check-links.py "$RUNNER_TEMP/site"
+
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: start a workshop from the template
+        run: |
+          git config --global user.name "workshop-common CI"
+          git config --global user.email "ci@users.noreply.github.com"
+          scripts/new-workshop.sh "$DEMO" "Template Test Workshop"
+      - name: build ui bundle
+        run: scripts/build-ui-bundle.sh "$RUNNER_TEMP/ui-bundle.zip"
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22  # @antora/pdf-extension 1.x requires Node.js >= 20.20
+      - name: setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true  # asciidoctor-pdf and rouge from the template's Gemfile
+          working-directory: ${{ env.DEMO }}
+      - name: install antora
+        run: |
+          npm install --global \
+            @antora/cli@3.2 \
+            @antora/site-generator@3.2 \
+            @antora/pdf-extension@1.0.1 \
+            @asciidoctor/tabs@1.0.0-beta.6
+      - name: build pdf
+        working-directory: ${{ env.DEMO }}
+        run: |
+          antora generate default-pdf.yml --stacktrace \
+            --ui-bundle-url "$RUNNER_TEMP/ui-bundle.zip"
+          find www -name '*.pdf' | grep .

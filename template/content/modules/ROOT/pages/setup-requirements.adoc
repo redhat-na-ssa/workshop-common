@@ -1,0 +1,60 @@
+= Setup Requirements
+
+This page lists everything needed to run this workshop.
+The facilitator prepares the cluster and accounts ahead of time; attendees prepare their workstations.
+
+== Cluster
+
+[cols="1,3",options="header"]
+|===
+|Item |Requirement
+
+|Platform
+|The OpenShift version and platform the workshop was validated on.
+
+|Size
+|The nodes, vCPUs and quota each attendee or pair needs.
+|===
+
+== Operators and Cluster Components
+
+[cols="1,1,2",options="header"]
+|===
+|Component |Installed by |Used in
+
+|_Name of the Operator or component_
+|The facilitator, or the attendee in a given exercise
+|The module that needs it
+|===
+
+== Attendee Workstation
+
+[cols="1,1,2",options="header"]
+|===
+|Tool |Version |Used for
+
+|`oc`
+|Matching the cluster version
+|Every module
+|===
+
+== Attendee Accounts, Projects and Roles
+
+Who needs which role, on the cluster and in any cloud or external account.
+
+== Network and Image Access
+
+The hosts that workstations and the cluster must reach, and the images the exercises pull.
+
+== Verification Checklist
+
+Each attendee runs these before the workshop starts.
+
+. Check that you are logged in to the cluster:
++
+[source,bash,role=execute]
+----
+oc whoami
+----
++
+It prints your user name.

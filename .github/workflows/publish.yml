@@ -52,22 +52,31 @@ jobs:
               --latest=false
           fi
 
-  # Rebuild the workshop sites so they pick up the new bundle and workflows right away.
-  # Needs a WORKSHOP_DISPATCH_TOKEN secret (a token with Actions write access to the
-  # workshop repos); without it this job is skipped and each site updates on its next push.
+  # Rebuild the workshop sites listed in workshops.txt so they pick up the new bundle and
+  # workflows right away. Needs a WORKSHOP_DISPATCH_TOKEN secret (a token with Actions write
+  # access to the workshop repos); without it this job is skipped and each site updates on
+  # its next push. A WORKSHOP_REPOS variable, if set, replaces the list.
   rebuild-sites:
     needs: bundle
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.WORKSHOP_DISPATCH_TOKEN }}
-      WORKSHOP_REPOS: ${{ vars.WORKSHOP_REPOS || 'openshift-101-workshop openshift-102-workshop ocp-cloud-workshop' }}
+      WORKSHOP_REPOS: ${{ vars.WORKSHOP_REPOS }}
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: workshops.txt
+          sparse-checkout-cone-mode: false
       - name: run each workshop's Pages workflow
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "No WORKSHOP_DISPATCH_TOKEN secret; the sites update on their next push."
             exit 0
+          fi
+          if [ -z "$WORKSHOP_REPOS" ]; then
+            WORKSHOP_REPOS=$(sed -e 's/#.*//' workshops.txt)
           fi
           for r in $WORKSHOP_REPOS; do
             gh workflow run gh-pages.yml \

@@ -1,0 +1,16 @@
+= @@TITLE@@
+
+// One or two sentences: who the workshop is for and what they can do after it.
+This workshop is for platform engineers who ...
+By the end, you can ...
+
+== How the Workshop Works
+
+Each module is a set of pages.
+Each page starts with the exercises on it, and each exercise ends with a check that it worked.
+
+Before you start, make sure your environment meets the xref:setup-requirements.adoc[Setup Requirements].
+
+== Modules
+
+. xref:module-01-first-steps.adoc[First Steps]: what the first module covers.

@@ -1,0 +1,14 @@
+name: modules
+title: "@@TITLE@@"
+version: master
+nav:
+  - modules/ROOT/nav.adoc
+
+asciidoc:
+  attributes:
+    lab_name: "@@TITLE@@"
+    release-version: master
+    page-pagination: true
+    # tabs with the same names (such as AWS and Azure) switch together on a page
+    tabs-sync-option: ''
+    page-links: []

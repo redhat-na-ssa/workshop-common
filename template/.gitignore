@@ -1,0 +1,20 @@
+# Site and PDF build output
+www/
+build/
+.cache/
+
+# Local tools
+node_modules/
+package-lock.json
+vendor/bundle/
+.bundle/
+Gemfile.lock
+
+# Editors and systems
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp
+.env
+.env.*
