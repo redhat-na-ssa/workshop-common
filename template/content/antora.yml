@@ -7,7 +7,6 @@ title: "@@TITLE@@"
 version: ~
 nav:
   - modules/ROOT/nav.adoc
-  # add-workshop.py adds workshops above this line
 
 asciidoc:
   attributes:
@@ -20,10 +19,10 @@ asciidoc:
     extra-cli-tools: ""
     tools-image-basename: ghcr.io/@@OWNER@@/@@REPO@@-tools
     tools-image-tag: latest
-    # The deployment steps on Workshop instructor: the site image and the chart version,
+    # The deployment steps on the instructor guide: the site image and the chart version,
     # with fallbacks for builds that aren't from a release.
     site-image-basename: ghcr.io/@@OWNER@@/@@REPO@@
-    chart-version: "<version>"
+    chart-version: "X.Y.Z"
     page-pagination: true
     # tabs with the same names (such as AWS and Azure) switch together on a page
     tabs-sync-option: ''

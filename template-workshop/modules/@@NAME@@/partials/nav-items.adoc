@@ -1,0 +1,5 @@
+// This workshop's pages. Its nav.adoc includes this list when the workshop is built
+// alone, and the site's navigation includes it under Workshop Content, so the list
+// starts at the third level and every xref names this module.
+*** Module 1: First Steps
+**** xref:@@NAME@@:module-01-first-steps.adoc[First Steps]

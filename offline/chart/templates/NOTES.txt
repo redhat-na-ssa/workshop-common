@@ -7,7 +7,7 @@
    oc port-forward svc/{{ include "workshop.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
 {{- end }}
 
-2. Open it in a browser: the workshop home is its first page.
+2. Open it in a browser: Workshop Home is its first page.
 
 {{- if .Values.tools.enabled }}
 

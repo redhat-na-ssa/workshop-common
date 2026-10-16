@@ -96,7 +96,7 @@ Every workshop repo is one site made of several workshops, each of which can be 
 |Path |What it is
 
 |`content/`
-|The home part, the same in every repo: *Workshop home* (`index.adoc`: what the site is and where to start), *Workshop instructor* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop attendee* (`attendee.adoc`: how the workshops work and where to begin), with *Downloads* (`downloads.adoc`: every file of the release) and *Shared CLI tools* (`cli-tools.adoc` and its snippet `partials/cli-tools-container.adoc`: how to run the release's tools image on the cluster).
+|The home part, the same in every repo: *Workshop Home* (`index.adoc`: what the site is and where to start), *Workshop Instructor Guide* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop Attendee Guide* (`attendee.adoc`: how the workshops work and where to begin), with *Downloads* (`downloads.adoc`: every file of the release) and *Shared CLI tools* (`cli-tools.adoc` and its snippet `partials/cli-tools-container.adoc`: how to run the release's tools image on the cluster).
 
 |`workshops/<name>/`
 |One workshop: its own `antora.yml`, and its pages, navigation, images and examples under `modules/<name>/`, including its `setup-requirements.adoc`. Its pages are at `/<name>/` on the site.
@@ -106,7 +106,9 @@ Every workshop repo is one site made of several workshops, each of which can be 
 |===
 
 All the parts are one Antora component (`name: ROOT`, no version), so one navigation spans every workshop.
-The playbooks list `content/` last, which makes its `antora.yml` the one the site uses: its title, its navigation list (the home part's, then each workshop's) and its AsciiDoc attributes, which must include every attribute any workshop needs.
+It has four top sections: Workshop Home, Workshop Instructor Guide (with Downloads and each workshop's setup requirements), Workshop Attendee Guide (with Shared CLI tools) and Workshop Content, which holds every workshop.
+Each workshop lists its pages in `modules/<name>/partials/nav-items.adoc`, starting at the third level (`***`) with module-qualified xrefs; the home part's `nav.adoc` includes that list under Workshop Content, and the workshop's own `nav.adoc` includes it when the workshop is built alone.
+The playbooks list `content/` last, which makes its `antora.yml` the one the site uses: its title, its navigation and its AsciiDoc attributes, which must include every attribute any workshop needs.
 A workshop's own `antora.yml` applies only when it is built alone.
 
 To add a workshop to a repo, from the repo's folder:
@@ -116,7 +118,7 @@ To add a workshop to a repo, from the repo's folder:
 ../workshop-common/scripts/add-workshop.py running-applications "Running Applications"
 ----
 
-It copies `template-workshop/` to `workshops/running-applications/` and lists the workshop everywhere the site needs it: both playbooks, `content/antora.yml`, the home part's navigation and its three pages.
+It copies `template-workshop/` to `workshops/running-applications/` and lists the workshop everywhere the site needs it: both playbooks, the home part's navigation and its three pages.
 Each of those has a line that says `add-workshop.py adds workshops above this line`; keep those lines.
 Then write its pages and fill in its row on the instructor page and its setup requirements.
 
@@ -288,7 +290,7 @@ gh api repos/<owner>/openshift-201-workshop/pages \
 If the `WORKSHOP_DISPATCH_TOKEN` secret is set, also add the repo to that token's repository access in your GitHub token settings, or its site won't rebuild after a merge here.
 
 . Write the workshop.
-Fill in the home part's three pages under `content/modules/ROOT/pages`, replace the sample pages under `workshops/first-steps/modules/first-steps/pages`, list them in that workshop's `nav.adoc`, and fill in its `setup-requirements.adoc`: every workshop lists the cluster components, Operators, command-line tools, roles and access it needs.
+Fill in the home part's three pages under `content/modules/ROOT/pages`, replace the sample pages under `workshops/first-steps/modules/first-steps/pages`, list them in that workshop's `partials/nav-items.adoc`, and fill in its `setup-requirements.adoc`: every workshop lists the cluster components, Operators, command-line tools, roles and access it needs.
 Add more workshops with `add-workshop.py` (see <<layout>>), and the tools they need to `tools/install.sh`.
 Work in pull requests, so *Check content* and *Test PDF Build* run on each one.
 
@@ -396,7 +398,7 @@ It calls `.github/workflows/release.yml` here, which publishes:
 |`DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml`, `images-mirror.txt`
 |===
 
-Every site has a *Downloads* page (`downloads.adoc`, under Workshop instructor) that lists these files.
+Every site has a *Downloads* page (`downloads.adoc`, under the Workshop Instructor Guide) that lists these files.
 The released site serves all of them but the offline bundle and the SBOMs under `/release-files/`, so a site deployed from the image has everything it needs; the Pages site links to the latest release's assets instead.
 
 The first time a workshop releases, make both images public under the owner's *Packages*, so clusters can pull them without credentials.
