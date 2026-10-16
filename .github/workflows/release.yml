@@ -100,6 +100,7 @@ jobs:
             --to-dir "$RUNNER_TEMP/pdf" \
             --attribute revnumber="$TAG" \
             --attribute tools-image-basename="$IMAGE-tools" \
+            --attribute site-image-basename="$IMAGE" \
             --attribute tools-image-tag="$TAG" \
             --attribute release-tag="$TAG" \
             --attribute chart-version="$CHART_VERSION" \
@@ -142,6 +143,7 @@ jobs:
             --url http://localhost:8080 \
             --to-dir "$RUNNER_TEMP/site" \
             --attribute tools-image-basename="$IMAGE-tools" \
+            --attribute site-image-basename="$IMAGE" \
             --attribute tools-image-tag="$TAG" \
             --attribute release-tag="$TAG" \
             --attribute chart-version="$CHART_VERSION" \
