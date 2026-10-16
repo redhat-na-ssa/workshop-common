@@ -1,0 +1,64 @@
+= First Steps
+
+// Replace this page with the first module. It shows the conventions every page follows;
+// the Check content workflow enforces the first two on every pull request.
+//
+// * Commands never sit inside a sentence: each one gets its own code block.
+// * Code lines stay within 76 characters, which the PDF fits. Break a long command
+//   with a backslash, one flag per indented line.
+// * Each page starts with its exercises and each exercise ends with a check.
+
+What this page covers, in a sentence or two.
+
+.Exercises on this page
+* <<exercise-1>>
+
+[#exercise-1]
+== Exercise 1: Create a Project
+
+. Create a project for the exercises:
++
+[source,bash,role=execute]
+----
+oc new-project workshop-first-steps
+----
+
+. Start a sample app in it:
++
+[source,bash,role=execute]
+----
+oc new-app \
+  --name hello \
+  --image registry.access.redhat.com/ubi9/httpd-24 \
+  --namespace workshop-first-steps
+----
+
+. Check that the app's pod is running:
++
+[source,bash,role=execute]
+----
+oc get pods \
+  --namespace workshop-first-steps
+----
++
+The `hello` pod shows `Running`.
+
+[NOTE]
+====
+A note for anything that would surprise an attendee, such as a step that takes a few minutes.
+====
+
+.Reference only: the same step on another platform
+[%collapsible]
+====
+A collapsible block for material attendees read but don't run.
+====
+
+== Clean Up
+
+Delete the project:
+
+[source,bash,role=execute]
+----
+oc delete project workshop-first-steps
+----

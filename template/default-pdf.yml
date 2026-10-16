@@ -1,0 +1,31 @@
+---
+site:
+  title: "@@TITLE@@"
+  url: "https://@@OWNER@@.github.io/@@REPO@@"
+  start_page: modules::index.adoc
+
+content:
+  sources:
+    - url: .
+      start_path: content
+
+ui:
+  bundle:
+    # Showroom theme plus the shared workshop CSS, tabs, copy buttons and footer stamp;
+    # see https://github.com/@@OWNER@@/workshop-common
+    url: https://github.com/@@OWNER@@/workshop-common/releases/download/ui-bundle/ui-bundle.zip
+    snapshot: true
+  supplemental_files:
+    - path: .nojekyll
+    - path: ui.yml
+      contents: "static_files: [ .nojekyll ]"
+
+runtime:
+  cache_dir: ./.cache/antora
+
+antora:
+  extensions:
+    - '@antora/pdf-extension'
+
+output:
+  dir: ./www

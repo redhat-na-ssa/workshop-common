@@ -10,6 +10,7 @@ The workshops and this repo live under the same GitHub owner; `<owner>` below st
 Moving them to another owner means changing `<owner>` in each workshop's playbooks and workflows.
 
 Change something here once and every workshop picks it up on its next site build.
+`workshops.txt` lists them, and <<adding-a-workshop>> starts a new one.
 
 == What's shared
 
@@ -37,6 +38,15 @@ Change something here once and every workshop picks it up on its next site build
 
 |`scripts/check-content.py`, `scripts/check-links.py`
 |The checks it runs. Both also run locally.
+
+|`template/`, `scripts/new-workshop.sh`
+|The starting point for a new workshop, and the script that copies it into a new repo. See <<adding-a-workshop>>.
+
+|`workshops.txt`
+|The workshops that use this repo. Their sites are rebuilt after every merge here.
+
+|`.github/workflows/template-test.yml`
+|Starts a workshop from the template on every pull request and builds its site and PDF, so the template keeps working.
 
 |`.github/workflows/publish.yml`
 |This repo's own workflow: on every change to `main` it rebuilds `ui-bundle.zip` and replaces it on the `ui-bundle` release.
@@ -104,7 +114,7 @@ antora generate default-site.yml \
 +
 [source,bash]
 ----
-for r in openshift-101-workshop openshift-102-workshop ocp-cloud-workshop; do
+for r in $(sed -e "s/#.*//" workshops.txt); do
   gh workflow run gh-pages.yml \
     --repo "<owner>/$r"
 done
@@ -112,9 +122,83 @@ done
 
 === Rebuilding the sites automatically
 
-Add a repository secret named `WORKSHOP_DISPATCH_TOKEN` holding a fine-grained token with *Actions: Read and write* on the three workshop repos.
+Add a repository secret named `WORKSHOP_DISPATCH_TOKEN` holding a fine-grained token with *Actions: Read and write* on the workshop repos.
 *Publish UI bundle* then runs each workshop's Pages workflow after every merge.
-To change which repos it rebuilds, set a repository variable `WORKSHOP_REPOS` to their names, separated by spaces.
+It rebuilds the repos in `workshops.txt`; a repository variable `WORKSHOP_REPOS`, holding names separated by spaces, replaces that list.
+
+[#adding-a-workshop]
+== Adding a workshop
+
+A new workshop starts from `template/`, which has the playbooks, the workflows, an introduction, a setup requirements page and a sample module page that shows the formatting conventions.
+The steps use the GitHub CLI, signed in to an account that can create repos under the owner of this repo.
+
+. From this repo's checkout, create the workshop next to it.
+The folder name becomes the repo name, and the owner is this repo's owner:
++
+[source,bash]
+----
+scripts/new-workshop.sh ../openshift-201-workshop "OpenShift 201"
+----
+
+. Create the repo on GitHub and push `main`:
++
+[source,bash]
+----
+gh repo create <owner>/openshift-201-workshop \
+  --public \
+  --source ../openshift-201-workshop \
+  --push
+----
+
+. Turn on GitHub Pages with GitHub Actions as the source:
++
+[source,bash]
+----
+gh api repos/<owner>/openshift-201-workshop/pages \
+  --method POST \
+  --field build_type=workflow
+----
+
+. Publish the site.
+The push in step 2 ran before Pages was on, so run the Pages workflow again:
++
+[source,bash]
+----
+gh workflow run gh-pages.yml \
+  --repo <owner>/openshift-201-workshop
+----
++
+The site appears at `https://<owner>.github.io/openshift-201-workshop/`.
+
+. Optional: serve it at a custom domain.
+Point a DNS CNAME record for the name at `<owner>.github.io`, set the name on the repo, then run the Pages workflow again as in step 4:
++
+[source,bash]
+----
+gh api repos/<owner>/openshift-201-workshop/pages \
+  --method PUT \
+  --field cname=openshift-201.example.com
+----
+
+. Register the workshop here, in one pull request: add its name to `workshops.txt` and to the list at the top of this README.
+If the `WORKSHOP_DISPATCH_TOKEN` secret is set, also add the repo to that token's repository access in your GitHub token settings, or its site won't rebuild after a merge here.
+
+. Write the workshop.
+Replace the sample pages under `content/modules/ROOT/pages`, list them in `nav.adoc`, and fill in `setup-requirements.adoc`: every workshop lists the cluster components, Operators, command-line tools, roles and access it needs.
+Work in pull requests, so *Check content* and *Test PDF Build* run on each one.
+
+. Publish the first release and its PDF:
++
+[source,bash]
+----
+gh workflow run build-and-release-pdf.yml \
+  --repo <owner>/openshift-201-workshop \
+  --field tag_name=v1.0.0
+----
+
+To change what every new workshop starts with, edit `template/`.
+Its placeholders are `@@TITLE@@`, `@@REPO@@` and `@@OWNER@@`, and *Test the workshop template* builds it on every pull request.
+Changing the template doesn't change workshops that already exist.
 
 [#checks]
 == Pull request checks

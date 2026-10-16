@@ -1,0 +1,22 @@
+name: Publish to GitHub Pages
+# Builds and deploys the site with the shared workflow in @@OWNER@@/workshop-common.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.adoc"
+      - ".gitignore"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  pages:
+    uses: @@OWNER@@/workshop-common/.github/workflows/pages.yml@main

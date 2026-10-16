@@ -1,0 +1,54 @@
+= @@TITLE@@
+:site-url: https://@@OWNER@@.github.io/@@REPO@@/modules
+
+// One sentence on what the workshop teaches and who it is for.
+
+Attendees follow the workshop on its site, https://@@OWNER@@.github.io/@@REPO@@/[@@OWNER@@.github.io/@@REPO@@].
+
+The rest of this README is the facilitator guide, for the instructor who runs a delivery of the workshop.
+The workshop site does not include it.
+
+== Before the Day
+
+Work through link:{site-url}/setup-requirements.html[Setup Requirements] for every attendee, then run the workshop end to end once on an environment built the same way.
+
+== Agenda
+
+[cols="1,1",options="header"]
+|===
+|Module |Time
+
+|First Steps
+|30 minutes
+|===
+
+== Working on the Workshop
+
+The pages are in `content/modules/ROOT/pages`, and `content/modules/ROOT/nav.adoc` lists them in order.
+The site look and the build workflows come from https://github.com/@@OWNER@@/workshop-common[workshop-common], so change those there.
+
+Every pull request runs *Check content*, which holds the lines it changes to the formatting conventions and checks that the site builds without warnings or broken links, and *Test PDF Build*.
+A merge to `main` publishes the site.
+
+To preview the site locally:
+
+[source,bash]
+----
+npx --yes \
+  --package @antora/cli@3.1 \
+  --package @antora/site-generator@3.1 \
+  --package @asciidoctor/tabs@1.0.0-beta.6 \
+  antora default-site.yml
+----
+
+[source,bash]
+----
+python3 -m http.server 8080 \
+  --directory www
+----
+
+Then open http://localhost:8080/.
+
+== Releases
+
+To publish a release with its PDF, run the *Build and Release PDF Documentation* workflow from the Actions tab with the next version, such as `v1.0.0`, or push a tag of that name.
