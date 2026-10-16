@@ -23,6 +23,8 @@ Prepare everything for the workshops you deliver:
 Shared by all the workshops: attendees who don't want to install the command-line tools run the workshop CLI tools image on the cluster, as xref:cli-tools.adoc[Shared CLI tools] describes.
 Make sure attendees can pull that image, or mirror it for a disconnected cluster.
 
+xref:downloads.adoc[Downloads] has every file of the release: the PDF, the Helm chart, the list of images to mirror and the guide for running the workshop in a disconnected cluster.
+
 == Before the Day
 
 . Prepare the environment from the setup requirements above, for every attendee.

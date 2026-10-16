@@ -5,6 +5,8 @@ name: Release a workshop
 #     (oc, helm and the workshop's own tools/install.sh), both on ghcr.io with SBOMs
 #   - the Helm chart, also served from the site at /helm/
 #   - an offline bundle: the site, chart, PDF, DISCONNECTED.md, TOOLS.md and the image list
+# The site serves every file but the bundle and SBOMs under /release-files/, listed on
+# its Downloads page, so a site deployed from the image has everything it needs.
 # The caller grants `contents: write` and `packages: write`.
 on:
   workflow_call:
@@ -67,6 +69,8 @@ jobs:
             echo "WORKSHOP_IMAGE=$image"
             echo "RELEASE_TAG=$TAG"
             echo "CHART_VERSION=${TAG#v}"
+            echo "RELEASE_PAGE=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
+            echo "RELEASE_DOWNLOADS=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$TAG"
           } >> "$GITHUB_ENV"
           echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "image=$image" >> "$GITHUB_OUTPUT"
@@ -96,7 +100,11 @@ jobs:
             --to-dir "$RUNNER_TEMP/pdf" \
             --attribute revnumber="$TAG" \
             --attribute tools-image-basename="$IMAGE-tools" \
-            --attribute tools-image-tag="$TAG"
+            --attribute tools-image-tag="$TAG" \
+            --attribute release-tag="$TAG" \
+            --attribute chart-version="$CHART_VERSION" \
+            --attribute release-page="$RELEASE_PAGE" \
+            --attribute downloads-base="$RELEASE_DOWNLOADS"
           mapfile -t pdfs < <(find "$RUNNER_TEMP/pdf" -name '*.pdf' -type f)
           if [ "${#pdfs[@]}" -ne 1 ]; then
             echo "::error::Expected one PDF, found ${#pdfs[@]}: ${pdfs[*]}"
@@ -135,14 +143,37 @@ jobs:
             --to-dir "$RUNNER_TEMP/site" \
             --attribute tools-image-basename="$IMAGE-tools" \
             --attribute tools-image-tag="$TAG" \
+            --attribute release-tag="$TAG" \
+            --attribute chart-version="$CHART_VERSION" \
+            --attribute release-page="$RELEASE_PAGE" \
+            --attribute downloads-base=release-files \
             "${keys[@]}"
       - name: package the chart and the offline files
+        env:
+          IMAGE: ${{ steps.names.outputs.image }}
         run: |
           .workshop-common/scripts/package-offline.sh \
             --out "$RUNNER_TEMP/offline" \
             --chart-index "$RUNNER_TEMP/site/helm" \
             --docs
-          cp "$WORKSHOP_NAME-$TAG.pdf" "$RUNNER_TEMP/site/"
+          {
+            echo "# The workshop site and its command-line tools"
+            echo "$IMAGE:$TAG"
+            echo "$IMAGE-tools:$TAG"
+            echo "# Images the exercises pull are on each workshop's Setup Requirements page."
+          } > "$RUNNER_TEMP/offline/images-mirror.txt"
+          # the files the Downloads page links to, in the site and so in the runtime image
+          files="$RUNNER_TEMP/site/release-files"
+          mkdir -p "$files"
+          cp "$WORKSHOP_NAME-$TAG.pdf" \
+            "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$CHART_VERSION.tgz" \
+            "$RUNNER_TEMP/offline/DISCONNECTED.md" \
+            "$RUNNER_TEMP/offline/TOOLS.md" \
+            "$RUNNER_TEMP/offline/tools-deployment.yaml" \
+            "$RUNNER_TEMP/offline/images-mirror.txt" \
+            "$files/"
+          cp "$files"/DISCONNECTED.md "$files"/TOOLS.md \
+            "$files"/tools-deployment.yaml "$files"/images-mirror.txt .
 
       # Images
       - name: setup buildx
@@ -202,26 +233,13 @@ jobs:
 
       # Offline bundle and release
       - name: offline bundle
-        env:
-          IMAGE: ${{ steps.names.outputs.image }}
-          VERSION: ${{ steps.names.outputs.version }}
         run: |
           staging="$RUNNER_TEMP/bundle"
           mkdir -p "$staging"
           cp -a "$RUNNER_TEMP/site" "$staging/www"
-          cp "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$VERSION.tgz" \
-            "$RUNNER_TEMP/offline/DISCONNECTED.md" \
-            "$RUNNER_TEMP/offline/TOOLS.md" \
-            "$RUNNER_TEMP/offline/tools-deployment.yaml" \
-            "$WORKSHOP_NAME-$TAG.pdf" \
-            "$staging/"
-          cp "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$VERSION.tgz" .
-          {
-            echo "# The workshop site and its command-line tools"
-            echo "$IMAGE:$TAG"
-            echo "$IMAGE-tools:$TAG"
-            echo "# Images the exercises pull are on each workshop's Setup Requirements page."
-          } > "$staging/images-mirror.txt"
+          # the release files at the top, as well as in www/release-files/
+          cp "$RUNNER_TEMP/site/release-files/"* "$staging/"
+          cp "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$CHART_VERSION.tgz" .
           tar -C "$staging" -czf "$WORKSHOP_NAME-offline-$TAG.tar.gz" .
           ls -la ./*.pdf ./*.tgz ./*.tar.gz ./*.sbom.cdx.json
       - name: publish the release
@@ -232,11 +250,17 @@ jobs:
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           body: |
-            Everything needed to run ${{ inputs.title }}, including in a disconnected cluster:
-            the PDF, the offline bundle (see DISCONNECTED.md inside), the Helm chart, and SBOMs for
+            Everything needed to run ${{ inputs.title }}, including in a disconnected cluster.
+            Start with DISCONNECTED.md. The site's Downloads page lists every file, and a site
+            deployed from the image serves them too. Also here: the PDF, the offline bundle, the
+            Helm chart, and SBOMs for
             `${{ steps.names.outputs.image }}:${{ inputs.tag-name }}` and
             `${{ steps.names.outputs.image }}-tools:${{ inputs.tag-name }}`.
           files: |
+            DISCONNECTED.md
+            TOOLS.md
+            tools-deployment.yaml
+            images-mirror.txt
             ${{ steps.names.outputs.name }}-${{ inputs.tag-name }}.pdf
             ${{ steps.names.outputs.name }}-offline-${{ inputs.tag-name }}.tar.gz
             ${{ steps.names.outputs.name }}-${{ steps.names.outputs.version }}.tgz

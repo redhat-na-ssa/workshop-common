@@ -6,9 +6,13 @@ release, so nothing is downloaded during the workshop.
 
 ## What the release contains
 
+The site's Downloads page lists the same files, and a site deployed from the
+`@@IMAGE@@:@@TAG@@` image serves them under `/release-files/`.
+
 | File or image | What it is |
 | --- | --- |
-| `@@NAME@@-offline-@@TAG@@.tar.gz` | This file, `TOOLS.md`, the built site (`www/`, with a Helm chart repository in `www/helm/`), the chart, the PDF, `tools-deployment.yaml` and `images-mirror.txt` |
+| `@@NAME@@-offline-@@TAG@@.tar.gz` | This file, `TOOLS.md`, the built site (`www/`, with a Helm chart repository in `www/helm/` and these files in `www/release-files/`), the chart, the PDF, `tools-deployment.yaml` and `images-mirror.txt` |
+| `DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml`, `images-mirror.txt` | This guide, the tools image guide, the tools pod on its own and the images to mirror |
 | `@@NAME@@-@@TAG@@.pdf` | The whole workshop as one PDF |
 | `@@NAME@@-@@VERSION@@.tgz` | The Helm chart: the site, and a pod with the tools |
 | `@@IMAGE@@:@@TAG@@` | The site, served over HTTP on port 8080 |

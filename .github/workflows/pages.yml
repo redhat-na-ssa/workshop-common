@@ -90,10 +90,22 @@ jobs:
           # the Shared CLI tools page shows the tools image the Release workflow
           # publishes: the latest release, or :latest before the first one
           tools_image="ghcr.io/${GITHUB_REPOSITORY,,}-tools"
+          # the Downloads page links to the latest release's files
+          release_args=()
+          if [ -n "$release" ]; then
+            repo_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+            release_args=(
+              --attribute release-tag="$release"
+              --attribute chart-version="${release#v}"
+              --attribute release-page="$repo_url/releases/tag/$release"
+              --attribute downloads-base="$repo_url/releases/download/$release"
+            )
+          fi
           antora generate "$PLAYBOOK" --stacktrace \
             --url "$SITE_URL" \
             --attribute tools-image-basename="$tools_image" \
             --attribute tools-image-tag="${release:-latest}" \
+            ${release_args[@]+"${release_args[@]}"} \
             "${keys[@]}"
       - name: setup helm
         if: inputs.helm-version != '' || inputs.helm-chart

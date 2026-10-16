@@ -12,7 +12,7 @@ This README is for the people who maintain the workshops.
 |Path |What it is
 
 |`content/`
-|The site's home part: `index.adoc` (Workshop home), `instructor.adoc` (Workshop instructor) and `attendee.adoc` (Workshop attendee), `cli-tools.adoc` (Shared CLI tools), and `antora.yml`, whose title, navigation and attributes the whole site uses.
+|The site's home part: `index.adoc` (Workshop home), `instructor.adoc` (Workshop instructor) and `attendee.adoc` (Workshop attendee), `downloads.adoc` (Downloads), `cli-tools.adoc` (Shared CLI tools), and `antora.yml`, whose title, navigation and attributes the whole site uses.
 
 |`workshops/<name>/`
 |One workshop each, with its pages under `modules/<name>/pages` and its order in `modules/<name>/nav.adoc`.
