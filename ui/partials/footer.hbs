@@ -1,8 +1,8 @@
 {{> footer-content}}
 {{> build-info}}
 <script>
-  // the theme's clipboard.js adds a copy button only to .copypaste and .execute blocks, so mark
-  // every other code block
+  // the theme's clipboard.js adds a copy button (and its tan background) only to .copypaste and
+  // .execute blocks, so mark every other code block to make them all look alike
   document.querySelectorAll('.doc .listingblock:not(.execute)').forEach(function (block) { block.classList.add('copypaste') })
 </script>
 {{> footer-scripts}}
