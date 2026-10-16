@@ -28,12 +28,9 @@ mkdir "$work/bundle"
 unzip -q "$work/base.zip" -d "$work/bundle"
 cp -R "$root/ui/." "$work/bundle/"
 
-# The theme's header logo links to demo.redhat.com, which only Red Hat employees can open;
-# point it at the workshop's start page, as the site title next to it already does.
-sed -i.bak \
-  's#href="https://demo.redhat.com" target="_blank"#href="{{{or site.url (or siteRootUrl siteRootPath)}}}"#' \
-  "$work/bundle/partials/header-content.hbs"
-rm "$work/bundle/partials/header-content.hbs.bak"
+# The theme's header shows "Red Hat Demo Platform" and links to the Demo Platform, which only
+# Red Hat employees can open; ui/partials/header-content.hbs replaces it with the Red Hat logo,
+# linked to the workshop's start page. Fail if a theme upgrade brings such a link back elsewhere.
 if grep -q 'demo.redhat.com' "$work/bundle/partials/"*.hbs; then
   echo "A partial still links to demo.redhat.com; check the theme version" >&2
   exit 1

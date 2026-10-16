@@ -1,0 +1,264 @@
+# PDF theme for every workshop PDF (asciidoctor-pdf 2.x).
+# The PDF workflows pass it in with --attribute pdf-theme=workshop and pdf-themesdir pointing here;
+# see the README section "PDF look". Colors follow the Red Hat palette the site theme uses,
+# and code blocks are tan like the copyable blocks on the sites.
+extends: default-with-font-fallbacks
+font:
+  catalog:
+    merge: true
+    Red Hat Text:
+      normal: fonts/RedHatText-Regular.ttf
+      italic: fonts/RedHatText-Italic.ttf
+      bold: fonts/RedHatText-Bold.ttf
+      bold_italic: fonts/RedHatText-BoldItalic.ttf
+    Red Hat Text Medium:
+      normal: fonts/RedHatText-Medium.ttf
+      italic: fonts/RedHatText-Italic.ttf
+      bold: fonts/RedHatText-Bold.ttf
+      bold_italic: fonts/RedHatText-BoldItalic.ttf
+    Red Hat Display:
+      normal: fonts/RedHatDisplay-Medium.ttf
+      italic: fonts/RedHatDisplay-Medium.ttf
+      bold: fonts/RedHatDisplay-Bold.ttf
+      bold_italic: fonts/RedHatDisplay-Bold.ttf
+    Red Hat Display Regular:
+      normal: fonts/RedHatDisplay-Regular.ttf
+      italic: fonts/RedHatDisplay-Regular.ttf
+      bold: fonts/RedHatDisplay-Bold.ttf
+      bold_italic: fonts/RedHatDisplay-Bold.ttf
+    Red Hat Mono:
+      normal: fonts/RedHatMono-Regular.ttf
+      italic: fonts/RedHatMono-Italic.ttf
+      bold: fonts/RedHatMono-Bold.ttf
+      bold_italic: fonts/RedHatMono-BoldItalic.ttf
+  # glyphs the Red Hat fonts lack, such as arrows and check marks
+  fallbacks: [M+ 1p Fallback, Noto Emoji]
+page:
+  size: Letter
+  margin: [0.8in, 0.85in, 0.8in, 0.85in]
+base:
+  font_family: Red Hat Text
+  font_color: 292929
+  font_size: 10
+  line_height_length: 15
+  line_height: $base_line_height_length / $base_font_size
+  text_align: left
+  border_color: D2D2D2
+  border_radius: 3
+  border_width: 0.5
+role:
+  red:
+    font_color: EE0000
+  subtitle:
+    font_color: 6A6E73
+link:
+  font_color: 0066CC
+codespan:
+  font_family: Red Hat Mono
+  font_color: 151515
+  font_size: 0.92em
+  background_color: F0F0F0
+  border_radius: 2
+  border_offset: 1.2
+heading:
+  font_family: Red Hat Display
+  font_style: normal
+  font_color: 151515
+  line_height: 1.2
+  margin_top: $vertical_rhythm * 1.1
+  margin_bottom: $vertical_rhythm * 0.6
+  # keep a heading on the same page as the block after it
+  min_height_after: auto
+  # chapter titles: one per page of the workshop
+  h2:
+    font_size: 26
+    border_width: [0, 0, 2, 0]
+    border_color: EE0000
+    padding: [0, 0, 8, 0]
+    margin_bottom: $vertical_rhythm * 1.2
+  h3:
+    font_size: 17
+  h4:
+    font_size: 13.5
+  h5:
+    font_family: Red Hat Text
+    font_style: bold
+    font_size: 11
+  h6:
+    font_family: Red Hat Text
+    font_style: bold
+    font_size: 10
+    font_color: 4D4D4D
+title_page:
+  text_align: left
+  background_image: image:cover.svg[]
+  title:
+    top: 26%
+    font_family: Red Hat Display
+    font_style: bold
+    font_size: 38
+    font_color: FFFFFF
+    line_height: 1.1
+    margin_bottom: 14
+  subtitle:
+    font_family: Red Hat Display Regular
+    font_style: normal
+    font_size: 18
+    font_color: D2D2D2
+  authors:
+    font_color: D2D2D2
+  revision:
+    margin_top: 18
+    font_family: Red Hat Text
+    font_size: 11
+    font_color: D2D2D2
+    delimiter: ' · '
+caption:
+  font_family: Red Hat Text Medium
+  font_style: normal
+  font_color: 4D4D4D
+  font_size: 9.5
+code:
+  font_family: Red Hat Mono
+  font_size: 8.6
+  font_color: 151515
+  line_height: 1.35
+  padding: [8, 11, 8, 11]
+  background_color: FAEBD7
+  border_width: 0
+  border_radius: 3
+conum:
+  font_family: Red Hat Mono
+  font_color: EE0000
+admonition:
+  column_rule_color: D2D2D2
+  column_rule_width: 1
+  padding: [2, 12, 2, 12]
+  label:
+    font_family: Red Hat Display
+    font_style: bold
+    font_size: 9
+    text_transform: uppercase
+  icon:
+    note:
+      name: fas-info-circle
+      stroke_color: 0066CC
+      size: 22
+    tip:
+      name: far-lightbulb
+      stroke_color: 3E8635
+      size: 22
+    important:
+      name: fas-exclamation-circle
+      stroke_color: EE0000
+      size: 22
+    warning:
+      name: fas-exclamation-triangle
+      stroke_color: F0AB00
+      size: 22
+    caution:
+      name: fas-fire
+      stroke_color: C9190B
+      size: 22
+# collapsible blocks, such as "EKS and AKS (reference only)": a tinted panel with a grey edge,
+# as on the sites (workshop-pdf.rb turns them into example blocks)
+example:
+  background_color: F3F5F8
+  border_color: 8A8D90
+  border_width: [0, 0, 0, 3]
+  border_radius: 0
+  padding: [10, 14, 10, 14]
+  # the collapsible's title, such as "Answer"
+  caption:
+    font_family: Red Hat Display
+    font_style: bold
+    font_size: 10
+    font_color: 4D4D4D
+    margin_inside: 5
+# tabs, such as ROSA (AWS) / ARO (Azure): one panel per tab with a red top edge, like the tab strip
+# on the sites (workshop-pdf.rb turns each tab into a sidebar)
+sidebar:
+  background_color: F8F8F8
+  border_color: EE0000
+  border_width: [2.5, 0, 0, 0]
+  border_radius: 0
+  padding: [10, 14, 12, 14]
+  title:
+    text_align: left
+    font_family: Red Hat Display
+    font_style: bold
+    font_size: 11.5
+    font_color: 151515
+quote:
+  font_size: 11
+  font_color: 4D4D4D
+  border_color: EE0000
+  border_left_width: 3
+description_list:
+  term_font_family: Red Hat Display
+  term_font_style: normal
+  term_font_color: 151515
+  term_font_size: 11
+list:
+  marker_font_color: EE0000
+  item_spacing: $vertical_rhythm / 3
+table:
+  font_size: 9
+  border_color: D2D2D2
+  border_width: 0.5
+  grid_color: E0E0E0
+  grid_width: 0.5
+  cell_padding: [5, 6, 5, 6]
+  head:
+    font_family: Red Hat Display
+    font_style: bold
+    font_color: 151515
+    background_color: F0F0F0
+    border_bottom_width: 1.5
+    border_bottom_color: 151515
+  body:
+    stripe_background_color: FAFAFA
+toc:
+  font_color: 292929
+  title:
+    font_size: 26
+  h2:
+    font_family: Red Hat Display
+    font_style: bold
+  dot_leader:
+    font_color: B8BBBE
+header:
+  height: 0.55in
+  font_size: 8
+  font_color: 6A6E73
+  border_color: D2D2D2
+  border_width: 0.5
+  vertical_align: bottom
+  padding: [0, 0, 6, 0]
+  recto:
+    left:
+      content: '{document-title}'
+    right:
+      content: '{chapter-title}'
+  verso:
+    left:
+      content: $header_recto_left_content
+    right:
+      content: $header_recto_right_content
+footer:
+  height: 0.55in
+  font_size: 8
+  font_color: 6A6E73
+  border_width: 0
+  vertical_align: top
+  padding: [6, 0, 0, 0]
+  recto:
+    left:
+      content: '{revnumber}'
+    right:
+      content: '*{page-number}*'
+  verso:
+    left:
+      content: $footer_recto_left_content
+    right:
+      content: $footer_recto_right_content

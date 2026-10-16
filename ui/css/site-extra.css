@@ -194,3 +194,12 @@ video {
     padding-bottom: 0.25rem;
     border-bottom: 1px solid #e1e1e1;
 }
+/* links in the text are Red Hat's link blue, as in Red Hat's product documentation, so they
+   don't read as warnings next to the red accents (the theme colors them #ee0000) */
+.doc a,
+.doc a:hover {
+    color: #0066cc;
+}
+.doc a:hover {
+    text-decoration: underline;
+}

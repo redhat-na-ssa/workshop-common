@@ -19,7 +19,10 @@ Change something here once and every workshop picks it up on its next site build
 |Path |What it is
 
 |`ui/`
-|Files laid over the https://github.com/rhpds/rhdp_showroom_theme[Red Hat Showroom theme]: extra CSS (`css/site-extra.css`), tabs (`css/tabs.css`, `js/vendor/tabs.js`), the copy button on every code block and the build stamp (`partials/footer.hbs`, `partials/build-info.hbs`), and the favicon.
+|Files laid over the https://github.com/rhpds/rhdp_showroom_theme[Red Hat Showroom theme]: extra CSS (`css/site-extra.css`), tabs (`css/tabs.css`, `js/vendor/tabs.js`), the Red Hat logo in the header (`partials/header-content.hbs`), the copy button on every code block and the build stamp (`partials/footer.hbs`, `partials/build-info.hbs`), link colors and the favicon.
+
+|`pdf/`
+|The look of every workshop PDF: the theme (`workshop-theme.yml`) with its Red Hat fonts and title page, and `workshop-pdf.rb`, which each workshop's `antora-assembler.yml` loads. See <<pdf-look>>.
 
 |`scripts/build-ui-bundle.sh`
 |Downloads the theme, lays `ui/` over it and zips the result. The theme version is set at the top of the script.
@@ -135,6 +138,37 @@ With this repo checked out next to the workshop, run this from the workshop's fo
 It builds the site with the same Antora version and extensions as the Pages workflow, serves it on http://localhost:8080/ and rebuilds it when you save a change.
 `--local-ui` uses this checkout's `ui/` instead of the published bundle, `--no-serve` only builds, and a playbook name builds that playbook instead of `default-site.yml`.
 It needs Node.js and Python 3.
+
+[#pdf-look]
+== PDF look
+
+Every workshop PDF gets its look from `pdf/`: a title page, a table of contents, page headers with the workshop and chapter, the release in the footer, the Red Hat Display, Text and Mono fonts, and tan code blocks like the copyable ones on the sites.
+`pdf/workshop-pdf.rb` also prints each `[tabs]` tab, such as ROSA (AWS) and ARO (Azure), as its own labeled panel, prints collapsible blocks as tinted panels, and moves a short code block or note to the next page whole instead of splitting it.
+
+Each workshop's `antora-assembler.yml` loads it from a checkout of this repo next to the workshop:
+
+[source,yaml]
+----
+build:
+  command: bundle exec asciidoctor-pdf -r ../workshop-common/pdf/workshop-pdf.rb
+----
+
+The PDF workflows check this repo out there.
+To build a PDF locally, clone this repo next to the workshop, then from the workshop checkout:
+
+[source,bash]
+----
+bundle install
+----
+
+[source,bash]
+----
+antora generate default-pdf.yml \
+  --attribute revnumber=v1.0.0
+----
+
+`revnumber` is the version on the title page and in the footers; the release workflow sets it to the release tag.
+To change the look of every PDF, edit `pdf/workshop-theme.yml` (the https://docs.asciidoctor.org/pdf-converter/latest/theme/[Asciidoctor PDF theme keys]); the fonts are under the SIL Open Font License in `pdf/fonts/OFL.txt`.
 
 [#adding-a-workshop]
 == Adding a workshop
@@ -262,6 +296,6 @@ Without `--base`, `check-content.py` checks every line, which lists the older pr
 == Reusable workflow inputs
 
 `pages.yml`:: `playbook` (default `default-site.yml`), `output-dir` (`www`), `extra-npm-packages` (installed next to Antora 3.1 and `@asciidoctor/tabs`), `helm-version` (installs Helm when set), `post-build` (a command run after the site is built). The caller grants `contents: read`, `pages: write` and `id-token: write`.
-`pdf-release.yml`:: `tag-name`, `pdf-name` and `pdf-title` (required), `playbook` (`default-pdf.yml`), `output-dir` (`www`). The caller grants `contents: write`.
+`pdf-release.yml`:: `tag-name`, `pdf-name` and `pdf-title` (required), `playbook` (`default-pdf.yml`), `output-dir` (`www`), `common-ref` (the branch, tag or commit of this repo to take `pdf/` from, `main`). The caller grants `contents: write`.
 `content-check.yml`:: `playbook` (`default-site.yml`), `extra-npm-packages`, `common-ref` (the branch, tag or commit of this repo to take the check scripts from, `main`). The caller grants `contents: read`.
-`pdf-test.yml`:: `playbook` (`default-pdf.yml`), `output-dir` (`www`), `single-pdf` (fail unless exactly one PDF is built). The caller grants `contents: read`.
+`pdf-test.yml`:: `playbook` (`default-pdf.yml`), `output-dir` (`www`), `common-ref` (`main`), `single-pdf` (fail unless exactly one PDF is built). The caller grants `contents: read`.
