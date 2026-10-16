@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build a workshop site the way its Pages workflow does, and serve it locally.
 #
-#   ../workshop-common/scripts/preview.sh [--watch] [--local-ui] [--no-serve] [PLAYBOOK]
+#   ../workshop-common/scripts/preview.sh [--watch] [--local-ui] [--no-serve] [--workshop NAME] [PLAYBOOK]
 #
 # Run it from a workshop checkout. It needs Node.js (for npx) and python3.
 # The site is built into www/ from PLAYBOOK (default-site.yml) and served on
@@ -10,18 +10,21 @@
 #   --watch      rebuild whenever a page, image or playbook changes
 #   --local-ui   use this workshop-common checkout's ui/ instead of the published bundle
 #   --no-serve   build once and exit
+#   --workshop NAME  build only workshops/NAME, on its own, to test it before it joins the site
 set -euo pipefail
 
-watch=false local_ui=false serve=true playbook=default-site.yml
-for arg in "$@"; do
-  case "$arg" in
+watch=false local_ui=false serve=true playbook=default-site.yml workshop=
+while [ $# -gt 0 ]; do
+  case "$1" in
     --watch) watch=true ;;
     --local-ui) local_ui=true ;;
     --no-serve) serve=false ;;
-    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    -*) echo "Unknown option $arg" >&2; exit 1 ;;
-    *) playbook=$arg ;;
+    --workshop) workshop=${2:?--workshop needs a name}; shift ;;
+    -h|--help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -*) echo "Unknown option $1" >&2; exit 1 ;;
+    *) playbook=$1 ;;
   esac
+  shift
 done
 if [ ! -f "$playbook" ]; then
   echo "No $playbook here: run this from a workshop checkout." >&2
@@ -30,7 +33,13 @@ fi
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 work="$(mktemp -d)"
-trap 'kill $(jobs -p) 2>/dev/null || true; rm -rf "$work"' EXIT
+trap 'kill $(jobs -p) 2>/dev/null || true; rm -rf "$work" .preview-playbook.yml' EXIT
+
+if [ -n "$workshop" ]; then
+  # the playbook stays in this folder, because its paths are relative to it
+  "$root/scripts/standalone-playbook.py" "$playbook" "$workshop" > .preview-playbook.yml
+  playbook=.preview-playbook.yml
+fi
 
 ui_args=()
 if [ "$local_ui" = true ]; then
@@ -65,6 +74,7 @@ echo "Watching for changes..."
 touch "$work/stamp"
 while sleep 2; do
   changed=$(find . -path ./www -prune -o -path ./.git -prune -o -path ./node_modules -prune \
+    -o -path ./.preview-playbook.yml -prune \
     -o -path ./.cache -prune -o -path ./build -prune \
     -o -type f -newer "$work/stamp" -print -quit)
   if [ -n "$changed" ]; then

@@ -1,7 +1,7 @@
-= Setup Requirements
+= @@WTITLE@@: Setup Requirements
 
-This page lists everything needed to run this workshop.
-The facilitator prepares the cluster and accounts ahead of time; attendees prepare their workstations.
+This page lists everything needed to run the @@WTITLE@@ workshop.
+The instructor prepares the cluster and accounts ahead of time; attendees prepare their workstations.
 
 == Cluster
 

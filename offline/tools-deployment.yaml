@@ -1,0 +1,33 @@
+# The workshop's command-line tools as a pod, without the Helm chart or a local oc.
+# In the OpenShift web console: choose your project, click + then Import YAML,
+# paste this file, change the image line to your mirror if needed, then Create.
+# Open a shell from Workloads, Pods, the pod, Terminal (run bash if it starts sh).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: @@NAME@@-tools
+  labels:
+    app.kubernetes.io/name: @@NAME@@-tools
+    app.kubernetes.io/part-of: @@NAME@@
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: @@NAME@@-tools
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: @@NAME@@-tools
+    spec:
+      containers:
+        - name: tools
+          image: @@IMAGE@@-tools:@@TAG@@
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi

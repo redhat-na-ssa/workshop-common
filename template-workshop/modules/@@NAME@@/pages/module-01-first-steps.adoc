@@ -20,7 +20,7 @@ What this page covers, in a sentence or two.
 +
 [source,bash,role=execute]
 ----
-oc new-project workshop-first-steps
+oc new-project @@NAME@@
 ----
 
 . Start a sample app in it:
@@ -30,7 +30,7 @@ oc new-project workshop-first-steps
 oc new-app \
   --name hello \
   --image registry.access.redhat.com/ubi9/httpd-24 \
-  --namespace workshop-first-steps
+  --namespace @@NAME@@
 ----
 
 . Check that the app's pod is running:
@@ -38,7 +38,7 @@ oc new-app \
 [source,bash,role=execute]
 ----
 oc get pods \
-  --namespace workshop-first-steps
+  --namespace @@NAME@@
 ----
 +
 The `hello` pod shows `Running`.
@@ -60,5 +60,5 @@ Delete the project:
 
 [source,bash,role=execute]
 ----
-oc delete project workshop-first-steps
+oc delete project @@NAME@@
 ----

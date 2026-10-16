@@ -1,0 +1,14 @@
+# Used only when this workshop is built alone (preview.sh --workshop @@NAME@@):
+# in the full site, content/antora.yml provides the title, nav and attributes.
+name: ROOT
+title: "@@WTITLE@@"
+version: ~
+nav:
+  - modules/@@NAME@@/nav.adoc
+
+asciidoc:
+  attributes:
+    lab_name: "@@WTITLE@@"
+    page-pagination: true
+    tabs-sync-option: ''
+    page-links: []

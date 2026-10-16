@@ -1,0 +1,9 @@
+# The workshop site, pre-built, served over HTTP on port 8080 for disconnected clusters.
+# Build context: the built site (the release workflow builds it with Antora first).
+FROM registry.access.redhat.com/ubi9/httpd-24:1-301
+USER 0
+RUN rm -rf /var/www/html/* /var/www/html/.??* 2>/dev/null || true
+COPY . /var/www/html/
+RUN chown -R 1001:0 /var/www/html && chmod -R g+rX /var/www/html
+USER 1001
+EXPOSE 8080

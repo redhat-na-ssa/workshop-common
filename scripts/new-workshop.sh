@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 # Start a new workshop repo from template/.
 #
-#   scripts/new-workshop.sh DIR "Workshop title"
+#   scripts/new-workshop.sh DIR "Site title" [NAME "First workshop title"]
 #
-# DIR's name becomes the repo name, such as ../openshift-201-workshop. The owner is
-# the one this workshop-common checkout came from (set OWNER to override), so the new
-# workshop loads the same shared look and workflows as the others.
+# DIR's name becomes the repo name, such as ../openshift-201-workshop. The repo starts
+# with the home part (content/) and one workshop, workshops/NAME (first-steps unless
+# given); add more with add-workshop.py. The owner is the one this workshop-common
+# checkout came from (set OWNER to override), so the repo loads the same shared look
+# and workflows as the others.
 set -euo pipefail
 
-if [ $# -ne 2 ]; then
-  sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+if [ $# -ne 2 ] && [ $# -ne 4 ]; then
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
   exit 1
 fi
 dir=$1
 title=$2
+first=${3:-first-steps}
+first_title=${4:-First Steps}
 repo=$(basename "$dir")
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -42,6 +46,8 @@ grep -rl '@@' "$dir" | while read -r f; do
     "$f"
   rm -f "$f.bak"
 done
+
+(cd "$dir" && "$root/scripts/add-workshop.py" "$first" "$first_title" >/dev/null)
 
 git -C "$dir" init --quiet --initial-branch main
 git -C "$dir" add --all

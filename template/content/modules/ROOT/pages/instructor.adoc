@@ -1,0 +1,31 @@
+= Workshop Instructor
+
+This page is for the instructor who runs a delivery of the workshop.
+
+== What the Workshop Covers
+
+// The audience, what they should already know, and what they can do afterwards.
+
+[cols="2,3,1",options="header"]
+|===
+|Workshop |Covers |Time
+
+// add-workshop.py adds workshops above this line
+|===
+
+== Environment and Requirements
+
+Each workshop lists the cluster components, Operators, command-line tools, roles and access it needs on its own page.
+Prepare everything for the workshops you deliver:
+
+// add-workshop.py adds workshops above this line
+
+== Before the Day
+
+. Prepare the environment from the setup requirements above, for every attendee.
+. Run the workshop end to end once on an environment built the same way.
+. Send attendees the xref:attendee.adoc[Workshop attendee] page so they can check their workstation.
+
+== Delivery Notes
+
+// Timings, pauses, common mistakes and how to recover from them.

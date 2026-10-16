@@ -1,0 +1,23 @@
+@@TITLE@@ has been deployed.
+
+1. Get the workshop's address:
+{{- if and .Values.route.enabled (.Capabilities.APIVersions.Has "route.openshift.io/v1") }}
+   oc get route {{ include "workshop.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath='{.spec.host}{"\n"}'
+{{- else }}
+   oc port-forward svc/{{ include "workshop.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+{{- end }}
+
+2. Open it in a browser: the workshop home is its first page.
+
+{{- if .Values.tools.enabled }}
+
+3. Open a shell with the workshop's command-line tools:
+   oc exec -it deploy/{{ include "workshop.toolsFullname" . }} -n {{ .Release.Namespace }} -- bash
+
+   Tools in the pod act as the pod's ServiceAccount. Run `oc login` there as yourself,
+   or grant the ServiceAccount the roles the exercises need.
+{{- end }}
+
+In a disconnected cluster, mirror the images and set image.repository and image.tag
+{{- if .Values.tools.enabled }} (and tools.image.repository and tools.image.tag){{ end }}.
+See DISCONNECTED.md in the offline bundle.

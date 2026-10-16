@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "workshop.fullname" . }}
+  labels:
+    helm.sh/chart: {{ include "workshop.chart" . }}
+    app.kubernetes.io/name: {{ include "workshop.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- /* The Deployment selector (immutable) also matches the tools pods; component keeps them out of the Service. */}}
+    app.kubernetes.io/name: {{ include "workshop.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: workshop
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP

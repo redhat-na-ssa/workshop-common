@@ -1,13 +1,17 @@
-name: modules
+# The site's home part. Every workshop under workshops/ belongs to this same component
+# (name ROOT, no version), so one navigation spans all of them. The playbooks list this
+# folder last, which makes this file's title, nav and attributes the ones the site uses;
+# a workshop's own antora.yml only applies when it is built alone.
+name: ROOT
 title: "@@TITLE@@"
-version: master
+version: ~
 nav:
   - modules/ROOT/nav.adoc
+  # add-workshop.py adds workshops above this line
 
 asciidoc:
   attributes:
     lab_name: "@@TITLE@@"
-    release-version: master
     page-pagination: true
     # tabs with the same names (such as AWS and Azure) switch together on a page
     tabs-sync-option: ''

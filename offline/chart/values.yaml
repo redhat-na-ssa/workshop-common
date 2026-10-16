@@ -1,0 +1,64 @@
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # Override to your mirrored registry in disconnected environments.
+  # The release workflow pushes @@IMAGE@@:<tag>
+  repository: "@@IMAGE@@"
+  # Defaults to chart appVersion when empty.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 8080
+
+route:
+  enabled: true
+  # edge, passthrough, reencrypt
+  termination: edge
+  host: ""
+
+resources:
+  limits:
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Optional CLI tools pod (oc, helm, kubectl, …) in the same release namespace.
+# Use for web console Terminal or in-cluster `helm install` (subject to ServiceAccount RBAC).
+tools:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: "@@IMAGE@@-tools"
+    # Defaults to the showroom image tag (values.image.tag) or chart appVersion when empty.
+    tag: ""
+    pullPolicy: IfNotPresent
+  podAnnotations: {}
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi

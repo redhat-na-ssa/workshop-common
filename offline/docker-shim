@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Minimal docker CLI compatibility for workshop exercises (no Docker Engine).
+# Supports: manifest inspect, pull (to a local skopeo dir: layout), image inspect, history.
+set -euo pipefail
+cmd=${1:-}
+sub=${2:-}
+ref=${3:-}
+
+usage() {
+  echo "docker shim: unsupported command line: $*" >&2
+  echo "Supported: docker manifest inspect <ref>, docker pull <ref>, docker image inspect <ref>, docker history <ref>" >&2
+  exit 1
+}
+
+# Accept bare names (e.g. alpine:latest) or full docker:// URIs for skopeo.
+docker_uri() {
+  local r=${1:?}
+  [[ "$r" == docker://* ]] && printf '%s\n' "$r" && return
+  printf 'docker://%s\n' "$r"
+}
+
+case "$cmd" in
+  manifest)
+    case "$sub" in
+      inspect)
+        [[ -n "${ref:-}" ]] || usage
+        exec skopeo inspect --raw "$(docker_uri "$ref")"
+        ;;
+    esac
+    ;;
+  pull)
+    ref=${2:-}
+    [[ -n "$ref" ]] || usage
+    dest=$(mktemp -d "${TMPDIR:-/tmp}/workshop-image-pull.XXXXXX")
+    skopeo copy "docker://$ref" "dir:${dest}"
+    printf 'pulled %s to dir:%s\n' "$ref" "$dest"
+    exit 0
+    ;;
+  image)
+    case "$sub" in
+      inspect)
+        [[ -n "${ref:-}" ]] || usage
+        exec skopeo inspect "docker://$ref"
+        ;;
+    esac
+    ;;
+  history)
+    ref=${2:-}
+    [[ -n "$ref" ]] || usage
+    skopeo inspect "docker://$ref" | jq '.LayersData // .RepoTags // .'
+    exit
+    ;;
+esac
+
+usage "$@"

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: "@@NAME@@"
+description: "@@TITLE@@ (the workshop site, and a pod with its command-line tools)"
+type: application
+# package-offline.sh sets version and appVersion from the release
+version: 0.0.0
+appVersion: "0.0.0"
+keywords:
+  - openshift
+  - workshop
+  - antora
