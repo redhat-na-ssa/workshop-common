@@ -22,6 +22,8 @@ def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__.strip())
     root = os.path.abspath(sys.argv[1])
+    if not os.path.isdir(root):
+        sys.exit(f"{root} doesn't exist: the site wasn't built.")
     pages, ids = [], {}
     for d, _, files in os.walk(root):
         for f in files:

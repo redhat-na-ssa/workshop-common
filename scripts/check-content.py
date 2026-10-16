@@ -151,7 +151,7 @@ def main():
         for n, rule, msg in check_file(path, lines, wanted):
             errors += 1
             if annotate:
-                print(f"::error file={path},line={n},title={rule}::{msg}")
+                print(f"::error file={path},line={n},title={rule}::{path}:{n}: {msg}")
             else:
                 print(f"{path}:{n}: {rule}: {msg}")
 

@@ -69,5 +69,6 @@ jobs:
             --to-dir "$RUNNER_TEMP/site" \
             --log-failure-level warn
       - name: links
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        # Antora writes the site even when it fails on a warning, so check its links too
+        if: ${{ !cancelled() && steps.build.outcome != 'skipped' }}
         run: python3 .workshop-common/scripts/check-links.py "$RUNNER_TEMP/site"
