@@ -8,6 +8,8 @@ Copy each command with the button on its code block and run it as it is, unless 
 
 Before you start, run the verification checklist at the end of the setup requirements for your workshop.
 
+You don't have to install the command-line tools on your laptop: xref:cli-tools.adoc[Shared CLI tools] shows how to run them in a pod on the cluster.
+
 == Workshops
 
 // add-workshop.py adds workshops above this line

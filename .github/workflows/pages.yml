@@ -87,8 +87,13 @@ jobs:
           # build for wherever Pages serves this repo (an org subpath such as
           # https://<owner>.github.io/<repo>, or a custom domain), so links,
           # the 404 page and the sitemap match the published URL.
+          # the Shared CLI tools page shows the tools image the Release workflow
+          # publishes: the latest release, or :latest before the first one
+          tools_image="ghcr.io/${GITHUB_REPOSITORY,,}-tools"
           antora generate "$PLAYBOOK" --stacktrace \
             --url "$SITE_URL" \
+            --attribute tools-image-basename="$tools_image" \
+            --attribute tools-image-tag="${release:-latest}" \
             "${keys[@]}"
       - name: setup helm
         if: inputs.helm-version != '' || inputs.helm-chart

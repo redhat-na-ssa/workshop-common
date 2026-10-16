@@ -15,6 +15,9 @@ By the end, you can ...
 
 |Taking the workshop
 |xref:attendee.adoc[Workshop attendee]: how the workshop works and where to begin.
+
+|Looking for the command-line tools
+|xref:cli-tools.adoc[Shared CLI tools]: run `oc`, `helm` and the other tools in a pod on the cluster instead of installing them.
 |===
 
 == Included Workshops
