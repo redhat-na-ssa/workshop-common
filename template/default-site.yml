@@ -3,10 +3,12 @@ site:
   title: "@@TITLE@@"
   # The Pages workflow passes --url with the address GitHub Pages serves the site at.
   url: "https://@@OWNER@@.github.io/@@REPO@@"
-  start_page: modules::index.adoc
+  start_page: ROOT::index.adoc
 
 content:
   sources:
+    # Each workshop under workshops/, then the home part, which must stay last.
+    # add-workshop.py adds workshops above this line
     - url: .
       start_path: content
 

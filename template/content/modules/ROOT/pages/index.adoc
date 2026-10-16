@@ -1,16 +1,24 @@
 = @@TITLE@@
 
-// One or two sentences: who the workshop is for and what they can do after it.
+// Two or three sentences: who the workshop is for and what they can do after it.
 This workshop is for platform engineers who ...
 By the end, you can ...
 
-== How the Workshop Works
+== Where to Start
 
-Each module is a set of pages.
-Each page starts with the exercises on it, and each exercise ends with a check that it worked.
+[cols="1,2",options="header"]
+|===
+|You are |Start here
 
-Before you start, make sure your environment meets the xref:setup-requirements.adoc[Setup Requirements].
+|Running a delivery of the workshop
+|xref:instructor.adoc[Workshop instructor]: what the workshop covers, the environment it needs, and how to run it.
 
-== Modules
+|Taking the workshop
+|xref:attendee.adoc[Workshop attendee]: how the workshop works and where to begin.
+|===
 
-. xref:module-01-first-steps.adoc[First Steps]: what the first module covers.
+== Included Workshops
+
+Each one stands on its own; run them in the order listed or pick the ones your group needs.
+
+// add-workshop.py adds workshops above this line

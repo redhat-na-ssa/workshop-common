@@ -1,4 +1,4 @@
-* xref:index.adoc[Introduction]
-* xref:setup-requirements.adoc[Setup Requirements]
-* Module 1: First Steps
-  ** xref:module-01-first-steps.adoc[First Steps]
+* xref:index.adoc[Workshop home]
+* xref:instructor.adoc[Workshop instructor]
+// add-workshop.py adds workshops above this line
+* xref:attendee.adoc[Workshop attendee]

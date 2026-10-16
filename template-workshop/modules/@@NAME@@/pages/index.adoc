@@ -1,0 +1,10 @@
+= @@WTITLE@@
+
+// One or two sentences: what this workshop covers and what attendees can do after it.
+This workshop covers ...
+
+Before you start, make sure your environment meets the xref:setup-requirements.adoc[Setup Requirements].
+
+== Modules
+
+. xref:module-01-first-steps.adoc[First Steps]: what the first module covers.

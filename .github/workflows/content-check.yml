@@ -4,7 +4,8 @@ name: Check content
 #      no runnable commands in sentences, no code lines too long for the PDF.
 #   2. The site builds without Antora warnings, such as an xref to a page that doesn't exist.
 #   3. Every link and image inside the built site resolves (scripts/check-links.py).
-# All three run even when an earlier one fails, so one run shows every problem.
+#   4. Each workshop under workshops/ builds on its own, without warnings.
+# All of them run even when an earlier one fails, so one run shows every problem.
 # The caller grants `contents: read`.
 on:
   workflow_call:
@@ -72,3 +73,25 @@ jobs:
         # Antora writes the site even when it fails on a warning, so check its links too
         if: ${{ !cancelled() && steps.build.outcome != 'skipped' }}
         run: python3 .workshop-common/scripts/check-links.py "$RUNNER_TEMP/site"
+      - name: build each workshop on its own, failing on warnings
+        # every workshops/NAME must build without the others, so it can be tested alone
+        if: ${{ !cancelled() && steps.build.outcome != 'skipped' }}
+        env:
+          PLAYBOOK: ${{ inputs.playbook }}
+        run: |
+          failed=0
+          for dir in workshops/*/; do
+            [ -f "$dir/antora.yml" ] || continue
+            name=$(basename "$dir")
+            echo "::group::$name"
+            python3 .workshop-common/scripts/standalone-playbook.py \
+              "$PLAYBOOK" "$name" > ".standalone-$name.yml"
+            if ! antora generate ".standalone-$name.yml" \
+              --to-dir "$RUNNER_TEMP/alone/$name" \
+              --log-failure-level warn; then
+              echo "::error::workshops/$name doesn't build on its own"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$failed"
