@@ -1,10 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="612" height="792" viewBox="0 0 612 792">
   <!-- title page background for the workshop PDFs (US Letter); the title, version and date
-       are drawn over the dark field by the theme (workshop-theme.yml, title_page) -->
-  <rect width="612" height="792" fill="#ffffff"/>
-  <rect width="612" height="500" fill="#151515"/>
-  <path d="M612 250 L612 500 L362 500 Z" fill="#1f1f1f"/>
-  <path d="M612 360 L612 500 L472 500 Z" fill="#292929"/>
+       are drawn over it by the theme (workshop-theme.yml, title_page) -->
+  <rect width="612" height="792" fill="#151515"/>
+  <path d="M612 420 L612 780 L252 780 Z" fill="#1f1f1f"/>
+  <path d="M612 580 L612 780 L412 780 Z" fill="#292929"/>
   <rect x="61" y="160" width="56" height="6" fill="#ee0000"/>
-  <rect y="500" width="612" height="8" fill="#ee0000"/>
+  <rect y="780" width="612" height="12" fill="#ee0000"/>
 </svg>

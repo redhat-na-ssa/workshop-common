@@ -11,8 +11,11 @@
 # * collapsible blocks, such as "EKS and AKS (reference only)" or an answer: a tinted panel with
 #   its title, like the sites show them once opened
 # * short code blocks and notes: moved to the next page whole instead of split
+# * a panel that runs onto the next page: no dashed "continued" rules, which cut across the code
+#   block at the top or bottom of the page, and a tab's red top edge on its first page only
 require 'asciidoctor'
 require 'asciidoctor/extensions'
+require 'asciidoctor/pdf'
 
 module WorkshopPdf
   THEME_DIR = __dir__
@@ -90,7 +93,34 @@ module WorkshopPdf
       end
     end
   end
+
+  # Where a panel breaks across pages, Asciidoctor PDF draws dashed "continued" rules, which cut
+  # across the code block at the edge of the page; leave them out. A tab panel's red top edge
+  # belongs on its first page only, so its later pages get just the background.
+  module PanelBreaks
+    def theme_fill_and_stroke_block category, extent, opts = {}
+      @workshop_pdf_panel = { category: category, pages: 0 }
+      super
+    ensure
+      @workshop_pdf_panel = nil
+    end
+
+    def theme_fill_and_stroke_bounds category, opts = {}
+      if (panel = @workshop_pdf_panel) && panel[:category] == :sidebar && (panel[:pages] += 1) > 1
+        return fill_bounds opts[:background_color] if opts[:background_color]
+        return
+      end
+      super
+    end
+
+    def stroke_horizontal_rule rule_color = stroke_color, options = {}
+      return if @workshop_pdf_panel && options[:line_style] == :dashed
+      super
+    end
+  end
 end
+
+Asciidoctor::PDF::Converter.prepend WorkshopPdf::PanelBreaks
 
 Asciidoctor::Extensions.register do
   preprocessor WorkshopPdf::Defaults
