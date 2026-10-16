@@ -30,24 +30,15 @@ The site look and the build workflows come from https://github.com/@@OWNER@@/wor
 Every pull request runs *Check content*, which holds the lines it changes to the formatting conventions and checks that the site builds without warnings or broken links, and *Test PDF Build*.
 A merge to `main` publishes the site.
 
-To preview the site locally:
+To preview the site locally, with https://github.com/@@OWNER@@/workshop-common[workshop-common] checked out next to this repo, run this from this repo's folder:
 
 [source,bash]
 ----
-npx --yes \
-  --package @antora/cli@3.1 \
-  --package @antora/site-generator@3.1 \
-  --package @asciidoctor/tabs@1.0.0-beta.6 \
-  antora default-site.yml
+../workshop-common/scripts/preview.sh --watch
 ----
 
-[source,bash]
-----
-python3 -m http.server 8080 \
-  --directory www
-----
-
-Then open http://localhost:8080/.
+It builds the site the way the Pages workflow does, serves it on http://localhost:8080/ and rebuilds it when you save a change.
+It needs Node.js and Python 3.
 
 == Releases
 

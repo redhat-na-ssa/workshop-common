@@ -36,6 +36,9 @@ Change something here once and every workshop picks it up on its next site build
 |`.github/workflows/content-check.yml`
 |Reusable workflow that checks a pull request: the formatting conventions on the lines it changes, a site build with no Antora warnings, and every link inside the built site. See <<checks>>.
 
+|`scripts/preview.sh`
+|Builds a workshop site the way the Pages workflow does and serves it locally, optionally rebuilding on every change and with this checkout's `ui/`. See <<previewing-a-workshop>>.
+
 |`scripts/check-content.py`, `scripts/check-links.py`
 |The checks it runs. Both also run locally.
 
@@ -94,19 +97,11 @@ To hold a workshop back on an older version, replace `@main` with a tag or commi
 == Making a change
 
 . Edit the files under `ui/`, or a workflow.
-. Try a UI change on a workshop before merging. From a workshop checkout, build the bundle from your copy of this repo:
+. Try a UI change on a workshop before merging. From a workshop checkout, preview it with the bundle built from your copy of this repo:
 +
 [source,bash]
 ----
-../workshop-common/scripts/build-ui-bundle.sh /tmp/ui-bundle.zip
-----
-+
-Then build the workshop site with it:
-+
-[source,bash]
-----
-antora generate default-site.yml \
-  --ui-bundle-url /tmp/ui-bundle.zip
+../workshop-common/scripts/preview.sh --local-ui
 ----
 . Open a pull request. The *Publish UI bundle* workflow builds the bundle and keeps it as a run artifact.
 . Merge it. The workflow replaces the bundle on the `ui-bundle` release.
@@ -125,6 +120,21 @@ done
 Add a repository secret named `WORKSHOP_DISPATCH_TOKEN` holding a fine-grained token with *Actions: Read and write* on the workshop repos.
 *Publish UI bundle* then runs each workshop's Pages workflow after every merge.
 It rebuilds the repos in `workshops.txt`; a repository variable `WORKSHOP_REPOS`, holding names separated by spaces, replaces that list.
+
+[#previewing-a-workshop]
+== Previewing a workshop
+
+Every workshop previews the same way.
+With this repo checked out next to the workshop, run this from the workshop's folder:
+
+[source,bash]
+----
+../workshop-common/scripts/preview.sh --watch
+----
+
+It builds the site with the same Antora version and extensions as the Pages workflow, serves it on http://localhost:8080/ and rebuilds it when you save a change.
+`--local-ui` uses this checkout's `ui/` instead of the published bundle, `--no-serve` only builds, and a playbook name builds that playbook instead of `default-site.yml`.
+It needs Node.js and Python 3.
 
 [#adding-a-workshop]
 == Adding a workshop
