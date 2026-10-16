@@ -32,6 +32,12 @@ Change something here once and every workshop picks it up on its next site build
 |`.github/workflows/pdf-test.yml`
 |Reusable workflow that builds a workshop PDF on a pull request, without publishing it.
 
+|`.github/workflows/content-check.yml`
+|Reusable workflow that checks a pull request: the formatting conventions on the lines it changes, a site build with no Antora warnings, and every link inside the built site. See <<checks>>.
+
+|`scripts/check-content.py`, `scripts/check-links.py`
+|The checks it runs. Both also run locally.
+
 |`.github/workflows/publish.yml`
 |This repo's own workflow: on every change to `main` it rebuilds `ui-bundle.zip` and replaces it on the `ui-bundle` release.
 |===
@@ -110,8 +116,58 @@ Add a repository secret named `WORKSHOP_DISPATCH_TOKEN` holding a fine-grained t
 *Publish UI bundle* then runs each workshop's Pages workflow after every merge.
 To change which repos it rebuilds, set a repository variable `WORKSHOP_REPOS` to their names, separated by spaces.
 
+[#checks]
+== Pull request checks
+
+Every workshop pull request runs *Check content*, which fails when:
+
+* A line the pull request adds to a code block is longer than 76 characters, which the PDF cuts off.
+Break a long command with a backslash, one flag per indented line.
+* A line the pull request adds puts a runnable command in a sentence.
+A command counts as runnable when it pipes or chains, has five or more words, or follows _run_, _enter_, _type_, _execute_ or _paste_.
+Put it in its own code block.
+Commands in tables and plain mentions, such as "`oc login` signs you in", are fine.
+* Antora warns while building the site, for example about an xref to a page that doesn't exist.
+* A link or image inside the built site points to a page, file or section that doesn't exist.
+
+Only the lines a pull request changes are held to the conventions, so older pages don't have to be cleaned up first.
+To allow an exception, put a comment line right above the code block or the sentence:
+
+....
+// check: long-lines
+[source,yaml]
+----
+....
+
+....
+// check: inline-ok
+Run `oc get pods | grep Running` only if you want the short list.
+....
+
+To run the checks before pushing, from a workshop checkout:
+
+[source,bash]
+----
+../workshop-common/scripts/check-content.py --base origin/main
+----
+
+[source,bash]
+----
+antora generate default-site.yml \
+  --to-dir /tmp/site \
+  --log-failure-level warn
+----
+
+[source,bash]
+----
+../workshop-common/scripts/check-links.py /tmp/site
+----
+
+Without `--base`, `check-content.py` checks every line, which lists the older problems too.
+
 == Reusable workflow inputs
 
 `pages.yml`:: `playbook` (default `default-site.yml`), `output-dir` (`www`), `extra-npm-packages` (installed next to Antora 3.1 and `@asciidoctor/tabs`), `helm-version` (installs Helm when set), `post-build` (a command run after the site is built). The caller grants `contents: read`, `pages: write` and `id-token: write`.
 `pdf-release.yml`:: `tag-name`, `pdf-name` and `pdf-title` (required), `playbook` (`default-pdf.yml`), `output-dir` (`www`). The caller grants `contents: write`.
+`content-check.yml`:: `playbook` (`default-site.yml`), `extra-npm-packages`, `common-ref` (the branch, tag or commit of this repo to take the check scripts from, `main`). The caller grants `contents: read`.
 `pdf-test.yml`:: `playbook` (`default-pdf.yml`), `output-dir` (`www`), `single-pdf` (fail unless exactly one PDF is built). The caller grants `contents: read`.
