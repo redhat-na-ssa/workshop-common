@@ -29,7 +29,7 @@ on:
         type: boolean
         default: true
       common-ref:
-        description: Branch, tag or commit of workshop-common to take the chart from
+        description: Branch, tag or commit of workshop-common to take the chart and scripts from
         type: string
         default: main
 
@@ -46,6 +46,16 @@ jobs:
       - name: configure pages
         id: pages
         uses: actions/configure-pages@v5
+      - name: checkout workshop-common
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/workshop-common
+          ref: ${{ inputs.common-ref }}
+          path: .workshop-common
+      - name: the workshop's own files
+        # lists the workshop's downloads/ folder on the Downloads page, which links them on
+        # the latest release
+        run: python3 .workshop-common/scripts/list-downloads.py
       - name: setup node
         uses: actions/setup-node@v4
         with:
@@ -113,13 +123,6 @@ jobs:
         uses: azure/setup-helm@v4
         with:
           version: ${{ inputs.helm-version || 'v3.16.3' }}
-      - name: checkout workshop-common
-        if: inputs.helm-chart
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/workshop-common
-          ref: ${{ inputs.common-ref }}
-          path: .workshop-common
       - name: helm chart repository
         if: inputs.helm-chart
         env:

@@ -4,7 +4,8 @@ name: Release a workshop
 #   - the runtime image (the built site served on port 8080) and the tools image
 #     (oc, helm and the workshop's own tools/install.sh), both on ghcr.io with SBOMs
 #   - the Helm chart, also served from the site at /helm/
-#   - an offline bundle: the site, chart, PDF, DISCONNECTED.md, TOOLS.md and the image list
+#   - an offline bundle: the site, chart, PDF, DISCONNECTED.md, TOOLS.md, the image list,
+#     the SBOMs and every file in the workshop's downloads/ folder
 # The site serves every file but the bundle and SBOMs under /release-files/, listed on
 # its Downloads page, so a site deployed from the image has everything it needs.
 # The caller grants `contents: write` and `packages: write`.
@@ -75,6 +76,13 @@ jobs:
           echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "image=$image" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: the workshop's own files
+        # everything in the workshop's downloads/ folder ships with the release; this lists
+        # it on the Downloads page and copies it for the release files and the bundle
+        run: |
+          python3 .workshop-common/scripts/list-downloads.py \
+            --copy "$RUNNER_TEMP/workshop-files"
 
       # PDF (Antora 3.2 with Assembler)
       - name: setup node for the pdf
@@ -174,6 +182,7 @@ jobs:
             "$RUNNER_TEMP/offline/tools-deployment.yaml" \
             "$RUNNER_TEMP/offline/images-mirror.txt" \
             "$files/"
+          cp -a "$RUNNER_TEMP/workshop-files/." "$files/"
           cp "$files"/DISCONNECTED.md "$files"/TOOLS.md \
             "$files"/tools-deployment.yaml "$files"/images-mirror.txt .
 
@@ -241,6 +250,7 @@ jobs:
           cp -a "$RUNNER_TEMP/site" "$staging/www"
           # the release files at the top, as well as in www/release-files/
           cp "$RUNNER_TEMP/site/release-files/"* "$staging/"
+          cp ./*.sbom.cdx.json "$staging/"
           cp "$RUNNER_TEMP/offline/$WORKSHOP_NAME-$CHART_VERSION.tgz" .
           tar -C "$staging" -czf "$WORKSHOP_NAME-offline-$TAG.tar.gz" .
           ls -la ./*.pdf ./*.tgz ./*.tar.gz ./*.sbom.cdx.json
@@ -268,3 +278,4 @@ jobs:
             ${{ steps.names.outputs.name }}-${{ steps.names.outputs.version }}.tgz
             ${{ steps.names.outputs.name }}-${{ inputs.tag-name }}.sbom.cdx.json
             ${{ steps.names.outputs.name }}-tools-${{ inputs.tag-name }}.sbom.cdx.json
+            ${{ runner.temp }}/workshop-files/*
