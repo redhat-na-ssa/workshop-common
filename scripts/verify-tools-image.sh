@@ -5,10 +5,11 @@
 #
 #   ../workshop-common/scripts/verify-tools-image.sh IMAGE:TAG
 #
-# Run it from the workshop repo, with podman or docker.
+# Run it from the workshop repo, with docker or podman. Docker comes first
+# because CI builds into Docker; set CONTAINER_ENGINE=podman to override.
 set -euo pipefail
 img=${1:?usage: verify-tools-image.sh IMAGE:TAG}
-engine=$(command -v podman || command -v docker)
+engine=${CONTAINER_ENGINE:-$(command -v docker || command -v podman)}
 
 "$engine" run --rm --entrypoint bash "$img" -c '
   set -euo pipefail
