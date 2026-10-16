@@ -12,6 +12,14 @@ nav:
 asciidoc:
   attributes:
     lab_name: "@@TITLE@@"
+    # The Shared CLI tools page: the repo name names the chart and the tools Deployment,
+    # extra-cli-tools lists what tools/install.sh adds (each in backticks, then ", "),
+    # and the image is a fallback for local builds; the Pages and Release workflows
+    # pass the published image's name and tag.
+    workshop-name: "@@REPO@@"
+    extra-cli-tools: ""
+    tools-image-basename: ghcr.io/@@OWNER@@/@@REPO@@-tools
+    tools-image-tag: latest
     page-pagination: true
     # tabs with the same names (such as AWS and Azure) switch together on a page
     tabs-sync-option: ''

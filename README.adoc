@@ -96,13 +96,13 @@ Every workshop repo is one site made of several workshops, each of which can be 
 |Path |What it is
 
 |`content/`
-|The home part, the same in every repo: *Workshop home* (`index.adoc`: what the site is and where to start), *Workshop instructor* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop attendee* (`attendee.adoc`: how the workshops work and where to begin).
+|The home part, the same in every repo: *Workshop home* (`index.adoc`: what the site is and where to start), *Workshop instructor* (`instructor.adoc`: what the workshops cover, the environment and requirements, delivery notes) and *Workshop attendee* (`attendee.adoc`: how the workshops work and where to begin), with *Shared CLI tools* (`cli-tools.adoc` and its snippet `partials/cli-tools-container.adoc`: how to run the release's tools image on the cluster).
 
 |`workshops/<name>/`
 |One workshop: its own `antora.yml`, and its pages, navigation, images and examples under `modules/<name>/`, including its `setup-requirements.adoc`. Its pages are at `/<name>/` on the site.
 
 |`tools/install.sh`, `tools/extra-tools`
-|The command-line tools the workshops need beyond the shared ones, added to the release's tools image.
+|The command-line tools the workshops need beyond the shared ones, added to the release's tools image. List them in `extra-cli-tools` in `content/antora.yml` too, so the Shared CLI tools page names them.
 |===
 
 All the parts are one Antora component (`name: ROOT`, no version), so one navigation spans every workshop.

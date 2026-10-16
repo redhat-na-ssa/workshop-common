@@ -2,3 +2,4 @@
 * xref:instructor.adoc[Workshop instructor]
 // add-workshop.py adds workshops above this line
 * xref:attendee.adoc[Workshop attendee]
+** xref:cli-tools.adoc[Shared CLI tools]

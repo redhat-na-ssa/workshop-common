@@ -12,13 +12,13 @@ This README is for the people who maintain the workshops.
 |Path |What it is
 
 |`content/`
-|The site's home part: `index.adoc` (Workshop home), `instructor.adoc` (Workshop instructor) and `attendee.adoc` (Workshop attendee), and `antora.yml`, whose title, navigation and attributes the whole site uses.
+|The site's home part: `index.adoc` (Workshop home), `instructor.adoc` (Workshop instructor) and `attendee.adoc` (Workshop attendee), `cli-tools.adoc` (Shared CLI tools), and `antora.yml`, whose title, navigation and attributes the whole site uses.
 
 |`workshops/<name>/`
 |One workshop each, with its pages under `modules/<name>/pages` and its order in `modules/<name>/nav.adoc`.
 
 |`tools/install.sh`
-|The command-line tools the workshops need beyond the shared ones, for the release's tools image.
+|The command-line tools the workshops need beyond the shared ones, for the release's tools image; list them in `extra-cli-tools` in `content/antora.yml` too, for the Shared CLI tools page.
 |===
 
 The site look, the PDF look, the build and release workflows and the chart come from https://github.com/@@OWNER@@/workshop-common[workshop-common], so change those there.
