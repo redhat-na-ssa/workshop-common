@@ -4,7 +4,7 @@ The site look and build workflows shared by the OpenShift workshops:
 
 * `openshift-101-workshop` (OpenShift 101)
 * `openshift-102-workshop` (OpenShift 102)
-* `ocp-cloud-workshop` (OpenShift on AWS and Azure)
+* `openshift-cloud-workshop` (OpenShift on AWS and Azure)
 
 The workshops and this repo live under the same GitHub owner; `<owner>` below stands for it.
 Moving them to another owner means changing `<owner>` in each workshop's playbooks and workflows.

@@ -78,7 +78,12 @@ jobs:
           if [ -z "$WORKSHOP_REPOS" ]; then
             WORKSHOP_REPOS=$(sed -e 's/#.*//' workshops.txt)
           fi
+          failed=0
           for r in $WORKSHOP_REPOS; do
-            gh workflow run gh-pages.yml \
-              --repo "$GITHUB_REPOSITORY_OWNER/$r"
+            if ! gh workflow run gh-pages.yml \
+              --repo "$GITHUB_REPOSITORY_OWNER/$r"; then
+              echo "::error::Couldn't start the Pages workflow in $r"
+              failed=1
+            fi
           done
+          exit "$failed"
