@@ -104,6 +104,7 @@ jobs:
           antora generate "$PLAYBOOK" --stacktrace \
             --url "$SITE_URL" \
             --attribute tools-image-basename="$tools_image" \
+            --attribute site-image-basename="${tools_image%-tools}" \
             --attribute tools-image-tag="${release:-latest}" \
             ${release_args[@]+"${release_args[@]}"} \
             "${keys[@]}"
