@@ -25,7 +25,7 @@ Work through link:{site-url}/setup-requirements.html[Setup Requirements] for eve
 == Working on the Workshop
 
 The pages are in `content/modules/ROOT/pages`, and `content/modules/ROOT/nav.adoc` lists them in order.
-The site look and the build workflows come from https://github.com/@@OWNER@@/workshop-common[workshop-common], so change those there.
+The site look, the PDF look and the build workflows come from https://github.com/@@OWNER@@/workshop-common[workshop-common], so change those there.
 
 Every pull request runs *Check content*, which holds the lines it changes to the formatting conventions and checks that the site builds without warnings or broken links, and *Test PDF Build*.
 A merge to `main` publishes the site.

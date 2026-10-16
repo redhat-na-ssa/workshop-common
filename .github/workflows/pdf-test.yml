@@ -12,6 +12,10 @@ on:
         description: Directory the playbook writes to
         type: string
         default: www
+      common-ref:
+        description: Branch, tag or commit of workshop-common to take the PDF look (pdf/) from
+        type: string
+        default: main
       single-pdf:
         description: Fail unless the build produces exactly one PDF
         type: boolean
@@ -25,6 +29,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+      - name: checkout workshop-common
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/workshop-common
+          ref: ${{ inputs.common-ref }}
+          path: .workshop-common
+      - name: put workshop-common next to the workshop
+        # antora-assembler.yml loads ../workshop-common/pdf/workshop-pdf.rb, as in a local checkout
+        run: ln -s "$GITHUB_WORKSPACE/.workshop-common" "$GITHUB_WORKSPACE/../workshop-common"
       - name: setup node
         uses: actions/setup-node@v4
         with:
@@ -44,7 +57,10 @@ jobs:
       - name: build pdf
         env:
           PLAYBOOK: ${{ inputs.playbook }}
-        run: antora generate "$PLAYBOOK" --stacktrace
+        # revnumber prints the commit on the title page and in the page footers
+        run: |
+          antora generate "$PLAYBOOK" --stacktrace \
+            --attribute revnumber="Test build $(git rev-parse --short HEAD)"
       - name: verify pdf
         env:
           OUTPUT_DIR: ${{ inputs.output-dir }}
