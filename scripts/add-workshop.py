@@ -7,7 +7,8 @@ Run it from the repo's folder. NAME is lowercase words joined by hyphens, such a
 helm or running-applications; it becomes the folder, the Antora module and the URL
 path (/NAME/). The new workshop starts from workshop-common's template-workshop/,
 and the script lists it everywhere the site needs it: both playbooks, the home
-part's antora.yml and nav, and the home, instructor and attendee pages. Each of
+part's nav (setup requirements under Workshop Instructor Guide, pages under Workshop
+Content), and the home, instructor and attendee pages. Each of
 those has a line saying "add-workshop.py adds workshops above this line".
 """
 import os
@@ -22,8 +23,10 @@ ADDITIONS = {
     # file: (text added above each marker in that file, in order)
     "default-site.yml": ["    - url: .\n      start_path: workshops/{name}\n"],
     "default-pdf.yml": ["    - url: .\n      start_path: workshops/{name}\n"],
-    "content/antora.yml": ["  - modules/{name}/nav.adoc\n"],
-    f"{HOME}/nav.adoc": ["** xref:{name}:setup-requirements.adoc[{title}]\n"],
+    f"{HOME}/nav.adoc": [
+        "** xref:{name}:setup-requirements.adoc[{title}]\n",
+        "** xref:{name}:index.adoc[{title}]\ninclude::{name}:partial$nav-items.adoc[]\n",
+    ],
     f"{HOME}/pages/index.adoc": ["* xref:{name}:index.adoc[{title}]\n"],
     f"{HOME}/pages/attendee.adoc": ["* xref:{name}:index.adoc[{title}]\n"],
     f"{HOME}/pages/instructor.adoc": [

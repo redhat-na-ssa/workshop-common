@@ -1,6 +1,8 @@
-* xref:index.adoc[Workshop home]
-* xref:instructor.adoc[Workshop instructor]
+* xref:index.adoc[Workshop Home]
+* xref:instructor.adoc[Workshop Instructor Guide]
 ** xref:downloads.adoc[Downloads]
 // add-workshop.py adds workshops above this line
-* xref:attendee.adoc[Workshop attendee]
+* xref:attendee.adoc[Workshop Attendee Guide]
 ** xref:cli-tools.adoc[Shared CLI tools]
+* Workshop Content
+// add-workshop.py adds workshops above this line

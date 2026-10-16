@@ -2,7 +2,7 @@
 
 // One sentence on what the workshops teach and who they are for.
 
-Attendees and instructors use the site, https://@@OWNER@@.github.io/@@REPO@@/[@@OWNER@@.github.io/@@REPO@@]: its *Workshop instructor* page has what an instructor needs to run a delivery, and its *Workshop attendee* page is where attendees start.
+Attendees and instructors use the site, https://@@OWNER@@.github.io/@@REPO@@/[@@OWNER@@.github.io/@@REPO@@]: its *Workshop Instructor Guide* page has what an instructor needs to run a delivery, and its *Workshop Attendee Guide* page is where attendees start.
 This README is for the people who maintain the workshops.
 
 == Layout
@@ -12,10 +12,10 @@ This README is for the people who maintain the workshops.
 |Path |What it is
 
 |`content/`
-|The site's home part: `index.adoc` (Workshop home), `instructor.adoc` (Workshop instructor) and `attendee.adoc` (Workshop attendee), `downloads.adoc` (Downloads), `cli-tools.adoc` (Shared CLI tools), and `antora.yml`, whose title, navigation and attributes the whole site uses.
+|The site's home part: `index.adoc` (Workshop Home), `instructor.adoc` (Workshop Instructor Guide) and `attendee.adoc` (Workshop Attendee Guide), `downloads.adoc` (Downloads), `cli-tools.adoc` (Shared CLI tools), and `antora.yml`, whose title, navigation and attributes the whole site uses.
 
 |`workshops/<name>/`
-|One workshop each, with its pages under `modules/<name>/pages` and its order in `modules/<name>/nav.adoc`.
+|One workshop each, with its pages under `modules/<name>/pages` and its order in `modules/<name>/partials/nav-items.adoc`.
 
 |`tools/install.sh`
 |The command-line tools the workshops need beyond the shared ones, for the release's tools image; list them in `extra-cli-tools` in `content/antora.yml` too, for the Shared CLI tools page.
