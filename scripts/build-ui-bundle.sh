@@ -28,6 +28,17 @@ mkdir "$work/bundle"
 unzip -q "$work/base.zip" -d "$work/bundle"
 cp -R "$root/ui/." "$work/bundle/"
 
+# The theme's header logo links to demo.redhat.com, which only Red Hat employees can open;
+# point it at the workshop's start page, as the site title next to it already does.
+sed -i.bak \
+  's#href="https://demo.redhat.com" target="_blank"#href="{{{or site.url (or siteRootUrl siteRootPath)}}}"#' \
+  "$work/bundle/partials/header-content.hbs"
+rm "$work/bundle/partials/header-content.hbs.bak"
+if grep -q 'demo.redhat.com' "$work/bundle/partials/"*.hbs; then
+  echo "A partial still links to demo.redhat.com; check the theme version" >&2
+  exit 1
+fi
+
 # Stamp the bundle with the workshop-common version it was built from, so each site's
 # footer shows it next to the workshop's own release (ui/partials/build-info.hbs).
 # The commit link points at this repo: GitHub Actions names it, otherwise the origin remote does.
