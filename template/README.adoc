@@ -19,6 +19,9 @@ This README is for the people who maintain the workshops.
 
 |`tools/install.sh`
 |The command-line tools the workshops need beyond the shared ones, for the release's tools image; list them in `extra-cli-tools` in `content/antora.yml` too, for the Shared CLI tools page.
+
+|`downloads/`
+|Files to ship with every release: each one is attached to the release, listed on the Downloads page and put in the offline bundle.
 |===
 
 The site look, the PDF look, the build and release workflows and the chart come from https://github.com/@@OWNER@@/workshop-common[workshop-common], so change those there.
@@ -57,3 +60,4 @@ Add a workshop:
 
 Run the *Release* workflow from the Actions tab with the next version, such as `v1.1.0`, or push a tag of that name.
 It publishes the PDF, the runtime and tools images, the Helm chart and an offline bundle for disconnected clusters; see "Releases" in workshop-common's README.
+To ship another file with every release, put it in `downloads/`.

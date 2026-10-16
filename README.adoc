@@ -38,8 +38,8 @@ Change something here once and every workshop picks it up on its next site build
 |`offline/`
 |What a release builds from: the runtime image (`Dockerfile.runtime`), the tools image (`Dockerfile.tools`, with the `docker` shim and shell banner), the Helm chart (`chart/`), and the `DISCONNECTED.md`, `TOOLS.md` and `tools-deployment.yaml` that ship in the offline bundle.
 
-|`scripts/package-offline.sh`, `scripts/verify-tools-image.sh`
-|Render and package a workshop's chart and offline files, and check its tools image. Both also run locally.
+|`scripts/package-offline.sh`, `scripts/verify-tools-image.sh`, `scripts/list-downloads.py`
+|Render and package a workshop's chart and offline files, and check its tools image (both also run locally); list and copy the files in a workshop's `downloads/` folder for its release.
 
 |`.github/workflows/pdf-test.yml`
 |Reusable workflow that builds a workshop PDF on a pull request, without publishing it.
@@ -388,7 +388,7 @@ It calls `.github/workflows/release.yml` here, which publishes:
 |The Helm chart, which runs the site and a tools pod; also served from the site at `/helm/`
 |`<workshop>-<version>.tgz`
 
-|The offline bundle: the site, the chart, the PDF, `DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml` and the list of images to mirror
+|The offline bundle: the site, the chart, the PDF, `DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml`, the list of images to mirror, the SBOMs and the workshop's own files
 |`<workshop>-offline-<tag>.tar.gz`
 
 |SBOMs of both images
@@ -396,7 +396,13 @@ It calls `.github/workflows/release.yml` here, which publishes:
 
 |The guide for disconnected clusters, the tools image guide, the tools pod on its own, and the images to mirror
 |`DISCONNECTED.md`, `TOOLS.md`, `tools-deployment.yaml`, `images-mirror.txt`
+
+|The workshop's own files: anything in its `downloads/` folder
+|Their own names
 |===
+
+To ship another file with every release, such as a manifest or a sample file attendees need offline, put it in the workshop repo's `downloads/` folder and merge.
+The next release attaches it, lists it on the Downloads page, serves it from the site image and puts it at the top of the offline bundle; nothing else needs changing.
 
 Every site has a *Downloads* page (`downloads.adoc`, under the Workshop Instructor Guide) that lists these files.
 The released site serves all of them but the offline bundle and the SBOMs under `/release-files/`, so a site deployed from the image has everything it needs; the Pages site links to the latest release's assets instead.
